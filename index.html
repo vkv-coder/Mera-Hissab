@@ -679,25 +679,42 @@ function renderAccounts(){
 // ── REMINDERS ──
 async function saveReminder(){
   var u=state.user;if(!u)return;
-  var name=document.getElementById('remName').value.trim();var amt=parseFloat(document.getElementById('remAmount').value);var day=parseInt(document.getElementById('remDueDay').value);
+  var name=document.getElementById('remName').value.trim();
+  var amt=parseFloat(document.getElementById('remAmount').value);
+  var day=parseInt(document.getElementById('remDueDay').value);
   if(!name||!amt||!day){showToast('Fill all fields','error');return;}
+  if(day<1||day>31){showToast('Due day must be 1-31','error');return;}
   var rem={id:'r'+Date.now(),user_id:u.id,name:name,amount:amt,due_day:day,active:true};
+  showToast('Saving...','info');
   var{error}=await sb.from('mh_reminders').insert(rem);
-  if(error){showToast('Error: '+error.message,'error');return;}
-  state.reminders.unshift(rem);showToast('Reminder saved! ☁️');toggleAddReminder();renderReminders();
+  if(error){showToast('Error: '+error.message,'error');console.error('Save error:',error);return;}
+  state.reminders.unshift(rem);
+  showToast('Reminder saved! ☁️');
+  toggleAddReminder();
+  renderReminders();
+  renderHome();
 }
 function toggleAddReminder(){var f=document.getElementById('addReminderForm');f.style.display=f.style.display==='none'?'block':'none';if(f.style.display==='block'){document.getElementById('remName').value='';document.getElementById('remAmount').value='';document.getElementById('remDueDay').value='';}}
 async function markPaid(rid){
-  var u=state.user;if(!u)return;var r=state.reminders.find(function(x){return x.id===rid;});if(!r)return;
+  var u=state.user;if(!u)return;
+  var r=state.reminders.find(function(x){return x.id===rid;});if(!r)return;
   var ym=getYM();
   var key=rid+'-'+ym;
+  // Update local state immediately for instant UI response
   if(!state.reminderPayments)state.reminderPayments={};
   state.reminderPayments[key]=true;
-  var{error}=await sb.from('mh_payments').upsert({id:key,user_id:u.id,ref_id:rid,month_key:ym,paid_from:'manual'});
-  if(error){showToast('Error: '+error.message,'error');return;}
-  showToast(r.name+' marked paid ☁️');
-  await loadAllData();
   renderHome();renderReminders();
+  // Save to Supabase - delete first then insert to avoid any conflict
+  await sb.from('mh_payments').delete().eq('id',key);
+  var{error}=await sb.from('mh_payments').insert({id:key,user_id:u.id,ref_id:rid,month_key:ym,paid_from:'manual'});
+  if(error){
+    showToast('Save error - try again','error');
+    // Revert local state
+    delete state.reminderPayments[key];
+    renderHome();renderReminders();
+    return;
+  }
+  showToast(r.name+' paid ✅');
 }
 async function toggleReminder(rid){var u=state.user;if(!u)return;var r=state.reminders.find(function(x){return x.id===rid;});if(!r)return;var newActive=!r.active;await sb.from('mh_reminders').update({active:newActive}).eq('id',rid);state.reminders=state.reminders.map(function(x){return x.id===rid?Object.assign({},x,{active:newActive}):x;});renderReminders();}
 async function deleteReminder(rid){var u=state.user;if(!u)return;await sb.from('mh_reminders').delete().eq('id',rid);state.reminders=state.reminders.filter(function(r){return r.id!==rid;});showToast('Deleted');renderReminders();}
@@ -706,11 +723,44 @@ function renderReminders(){
   var ym=getYM();
   if(due.length>0){
     html+='<div class="sec-hdr" style="color:#E65100">Due Within 2 Working Days</div>';
-    due.forEach(function(r){if(state.reminderPayments[r.id+'-'+ym])return;var d=workingDaysUntil(r.due_day),lbl=d===0?'Today':d===1?'1 working day':'2 working days';html+='<div class="card" style="margin-top:0;border-left:3px solid '+(d===0?'#D32F2F':'#E65100')+'"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:14px;font-weight:800;color:#7B3000">'+r.name+'</div><div style="font-size:11px;font-weight:800;color:'+(d===0?'#D32F2F':'#E65100')+';margin-top:3px">Due '+dueDateStr(r.due_day)+' ('+lbl+')</div></div><div style="font-size:15px;font-weight:900;color:#D32F2F">-'+fmt(r.amount)+'</div></div><div style="display:flex;gap:7px"><button onclick="markPaid(\''+r.id+'\')" style="flex:1;background:#FFF3E0;border:1px solid #FFCC80;border-radius:9px;padding:8px;color:#E65100;font-size:12px;font-weight:800;cursor:pointer">Mark Paid</button><button onclick="deleteReminder(\''+r.id+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:8px 11px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">X</button></div></div>';});
+    due.forEach(function(r){
+      var paid=!!state.reminderPayments[r.id+'-'+ym];
+      if(paid)return; // hide paid ones
+      var d=workingDaysUntil(r.due_day),lbl=d===0?'Today':d===1?'1 working day':'2 working days';
+      html+='<div class="card" style="margin-top:0;border-left:3px solid '+(d===0?'#D32F2F':'#E65100')+'">'+
+        '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'+
+        '<div><div style="font-size:14px;font-weight:800;color:#7B3000">'+r.name+'</div>'+
+        '<div style="font-size:11px;font-weight:800;color:'+(d===0?'#D32F2F':'#E65100')+';margin-top:3px">Due '+dueDateStr(r.due_day)+' ('+lbl+')</div></div>'+
+        '<div style="font-size:15px;font-weight:900;color:#D32F2F">-'+fmt(r.amount)+'</div></div>'+
+        '<div style="display:flex;gap:7px">'+
+        '<button onclick="markPaid(\''+r.id+'\')" style="flex:1;background:#FFF3E0;border:1px solid #FFCC80;border-radius:9px;padding:8px;color:#E65100;font-size:12px;font-weight:800;cursor:pointer">Mark Paid</button>'+
+        '<button onclick="deleteReminder(\''+r.id+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:8px 11px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">X</button>'+
+        '</div></div>';
+    });
   }
   html+='<div class="sec-hdr">All Reminders</div>';
   if(state.reminders.length===0)html+='<div class="empty"><div class="ico">🔔</div><div class="etitle">No reminders yet</div></div>';
-  state.reminders.forEach(function(r){if(state.reminderPayments[r.id+'-'+ym])return;var d=workingDaysUntil(r.due_day);if(r.active&&d>=0&&d<=2)return;html+='<div class="card" style="margin-top:0;opacity:'+(r.active?1:0.6)+'"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:14px;font-weight:800;color:#7B3000">'+r.name+'</div><div style="font-size:11px;font-weight:700;color:#90A4AE">Due '+dueDateStr(r.due_day)+'</div></div><div style="font-size:15px;font-weight:900;color:#D32F2F">-'+fmt(r.amount)+'</div></div><div style="display:flex;gap:7px"><button onclick="markPaid(\''+r.id+'\')" style="flex:1;background:#FFF3E0;border:1px solid #FFCC80;border-radius:9px;padding:7px;color:#E65100;font-size:12px;font-weight:800;cursor:pointer">Mark Paid</button><button onclick="toggleReminder(\''+r.id+'\')" style="background:#FFF3E0;border:1px solid #FFCCBC;border-radius:9px;padding:7px 11px;color:#E65100;font-size:11px;font-weight:700;cursor:pointer">'+(r.active?'Pause':'Resume')+'</button><button onclick="deleteReminder(\''+r.id+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:7px 11px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">X</button></div></div>';});
+  var shown=0;
+  state.reminders.forEach(function(r){
+    var paid=!!state.reminderPayments[r.id+'-'+ym];
+    if(paid)return; // hide paid ones - reappear next month automatically
+    var d=workingDaysUntil(r.due_day);
+    if(r.active&&d>=0&&d<=2)return; // already shown in due section above
+    shown++;
+    html+='<div class="card" style="margin-top:0;opacity:'+(r.active?1:0.6)+'">'+
+      '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'+
+      '<div><div style="font-size:14px;font-weight:800;color:#7B3000">'+r.name+'</div>'+
+      '<div style="font-size:11px;font-weight:700;color:#90A4AE">Due '+dueDateStr(r.due_day)+'</div></div>'+
+      '<div style="font-size:15px;font-weight:900;color:#D32F2F">-'+fmt(r.amount)+'</div></div>'+
+      '<div style="display:flex;gap:7px">'+
+      '<button onclick="markPaid(\''+r.id+'\')" style="flex:1;background:#FFF3E0;border:1px solid #FFCC80;border-radius:9px;padding:7px;color:#E65100;font-size:12px;font-weight:800;cursor:pointer">Mark Paid</button>'+
+      '<button onclick="toggleReminder(\''+r.id+'\')" style="background:#FFF3E0;border:1px solid #FFCCBC;border-radius:9px;padding:7px 11px;color:#E65100;font-size:11px;font-weight:700;cursor:pointer">'+(r.active?'Pause':'Resume')+'</button>'+
+      '<button onclick="deleteReminder(\''+r.id+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:7px 11px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">X</button>'+
+      '</div></div>';
+  });
+  if(shown===0&&due.filter(function(r){return !state.reminderPayments[r.id+'-'+ym];}).length===0){
+    html+='<div class="empty"><div class="ico">✅</div><div class="etitle">All paid this month!</div><div class="esub">Reminders will reappear next month</div></div>';
+  }
   document.getElementById('remindersList').innerHTML=html;
 }
 
