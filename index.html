@@ -151,9 +151,26 @@ textarea.inp{resize:none;height:72px;}
 
     <div class="fg"><label class="lbl">Email *</label><input class="inp" type="email" id="loginEmail" placeholder="yourname@gmail.com"/></div>
     <div class="fg"><label class="lbl">Password *</label><input class="inp" type="password" id="loginPassword" placeholder="Min 6 characters"/></div>
+    <div style="text-align:right;margin-top:-8px;margin-bottom:12px"><span onclick="showForgotPassword()" style="font-size:12px;color:#E65100;font-weight:700;cursor:pointer">Forgot Password?</span></div>
     <div class="fg"><label class="lbl">Display Name (first time only)</label><input class="inp" type="text" id="loginName" placeholder="e.g. Vijay / vkv"/></div>
     <button class="btn-primary" onclick="doEmailLogin()" style="margin-bottom:8px">Sign In / Sign Up</button>
     <div style="font-size:11px;color:#90A4AE;text-align:center;font-weight:600">Your data is encrypted and safe on cloud ☁️</div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD -->
+<div class="screen" id="s-forgot">
+  <div style="background:linear-gradient(135deg,#1B5E20,#2E7D32);padding:50px 20px 32px;text-align:center;">
+    <div style="font-size:48px">🔑</div>
+    <div style="font-size:22px;font-weight:900;color:#fff;margin-top:10px">Reset Password</div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:6px">We'll send a reset link to your email</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Enter your email</div>
+    <div class="fg"><label class="lbl">Email *</label><input class="inp" type="email" id="resetEmail" placeholder="yourname@gmail.com"/></div>
+    <button class="btn-primary" onclick="doPasswordReset()" style="margin-bottom:10px">Send Reset Link</button>
+    <button class="btn-sec" style="width:100%;text-align:center" onclick="go('s-login',true)">← Back to Login</button>
+    <div style="font-size:11px;color:#90A4AE;text-align:center;margin-top:10px;font-weight:600">Check your email inbox and spam folder</div>
   </div>
 </div>
 
@@ -360,6 +377,22 @@ async function doGoogleLogin(){
   showToast('Opening Google login...','info');
   var{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href}});
   if(error)showToast('Error: '+error.message,'error');
+}
+function showForgotPassword(){
+  navStack.push(currentScreen);
+  showScreen('s-forgot');
+  document.getElementById('resetEmail').value=document.getElementById('loginEmail').value||'';
+}
+async function doPasswordReset(){
+  var email=document.getElementById('resetEmail').value.trim().toLowerCase();
+  if(!email){showToast('Enter your email','error');return;}
+  showToast('Sending reset link...','info');
+  var{error}=await sb.auth.resetPasswordForEmail(email,{
+    redirectTo:window.location.href
+  });
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast('Reset link sent! Check your email 📧');
+  setTimeout(function(){go('s-login',true);},2500);
 }
 async function doEmailLogin(){
   var email=document.getElementById('loginEmail').value.trim().toLowerCase();
@@ -656,9 +689,14 @@ function toggleAddReminder(){var f=document.getElementById('addReminderForm');f.
 async function markPaid(rid){
   var u=state.user;if(!u)return;var r=state.reminders.find(function(x){return x.id===rid;});if(!r)return;
   var today=new Date(),ym=today.getFullYear()+'-'+(today.getMonth()+1);
-  var key=rid+'-'+ym;if(!state.reminderPayments)state.reminderPayments={};state.reminderPayments[key]=true;
+  var key=rid+'-'+ym;
+  if(!state.reminderPayments)state.reminderPayments={};
+  state.reminderPayments[key]=true;
   await sb.from('mh_payments').upsert({id:key,user_id:u.id,ref_id:rid,month_key:ym,paid_from:'manual'});
-  showToast(r.name+' marked paid ☁️');renderHome();renderReminders();
+  showToast(r.name+' marked paid ☁️');
+  // Reload all data to ensure home screen reflects correctly
+  await loadAllData();
+  renderHome();renderReminders();
 }
 async function toggleReminder(rid){var u=state.user;if(!u)return;var r=state.reminders.find(function(x){return x.id===rid;});if(!r)return;var newActive=!r.active;await sb.from('mh_reminders').update({active:newActive}).eq('id',rid);state.reminders=state.reminders.map(function(x){return x.id===rid?Object.assign({},x,{active:newActive}):x;});renderReminders();}
 async function deleteReminder(rid){var u=state.user;if(!u)return;await sb.from('mh_reminders').delete().eq('id',rid);state.reminders=state.reminders.filter(function(r){return r.id!==rid;});showToast('Deleted');renderReminders();}
@@ -777,7 +815,15 @@ window.onload=async function(){
   },1800);
   // Listen for auth changes
   sb.auth.onAuthStateChange(async function(event,session){
-    if(event==='SIGNED_IN'&&session){
+    if(event==='PASSWORD_RECOVERY'){
+      // User clicked reset link — show update password prompt
+      var newPass=prompt('Enter your new password (min 6 characters):');
+      if(newPass&&newPass.length>=6){
+        var{error}=await sb.auth.updateUser({password:newPass});
+        if(error){showToast('Error: '+error.message,'error');}
+        else{showToast('Password updated! Please login again.');await sb.auth.signOut();go('s-login',true);}
+      }
+    }else if(event==='SIGNED_IN'&&session){
       state.user=session.user;
       await loadOrCreateProfile('');
       await loadAllData();
