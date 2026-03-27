@@ -621,7 +621,15 @@ async function saveTxn(){
 }
 
 // ── HOME ──
-function dueReminders(){return(state.reminders||[]).filter(function(r){if(!r.active)return false;var d=workingDaysUntil(r.due_day);return d>=0&&d<=2;});}
+function dueReminders(){
+  var ym=getYM();
+  return(state.reminders||[]).filter(function(r){
+    if(!r.active)return false;
+    if(state.reminderPayments[r.id+'-'+ym])return false; // hide paid ones
+    var d=workingDaysUntil(r.due_day);
+    return d>=0&&d<=2;
+  });
+}
 function getYM(){var today=new Date();return today.getFullYear()+'-'+(today.getMonth()+1<10?'0':'')+(today.getMonth()+1);}
 function getPendingEmiLiability(){var ym=getYM();var total=0;(state.reminders||[]).forEach(function(r){if(!r.active)return;if(!state.reminderPayments[r.id+'-'+ym])total+=r.amount;});return total;}
 function renderHome(){
