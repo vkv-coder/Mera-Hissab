@@ -380,9 +380,15 @@ async function doEmailLogin(){
 }
 async function loadOrCreateProfile(name){
   var{data}=await sb.from('mh_users').select('*').eq('id',state.user.id).single();
-  if(data){state.profile=data;}
-  else{
-    var n=name||(state.user.email.split('@')[0]);
+  if(data){
+    // If user typed a new name and it's different, update it
+    if(name&&name.trim()&&name.trim()!==data.name){
+      await sb.from('mh_users').update({name:name.trim()}).eq('id',state.user.id);
+      data.name=name.trim();
+    }
+    state.profile=data;
+  }else{
+    var n=(name&&name.trim())?name.trim():(state.user.user_metadata&&state.user.user_metadata.full_name)||state.user.email.split('@')[0];
     var{data:d2}=await sb.from('mh_users').insert({id:state.user.id,name:n,email:state.user.email}).select().single();
     state.profile=d2||{id:state.user.id,name:n,email:state.user.email,plan:'free'};
   }
