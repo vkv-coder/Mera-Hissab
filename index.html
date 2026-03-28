@@ -6,6 +6,11 @@
 <title>Mera Hisaab Mere Saath</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+.premium-banner{margin:8px 12px;background:linear-gradient(135deg,#7B3000,#E65100);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}
+.premium-badge{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#FFD700,#FFA000);border-radius:100px;padding:3px 10px;font-size:10px;font-weight:800;color:#7B3000;}
+</style>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:#F0F4F8;font-family:'Nunito',sans-serif;min-height:100vh;overscroll-behavior:none;}
@@ -151,7 +156,7 @@ textarea.inp{resize:none;height:72px;}
 
     <div class="fg"><label class="lbl">Email *</label><input class="inp" type="email" id="loginEmail" placeholder="yourname@gmail.com"/></div>
     <div class="fg"><label class="lbl">Password *</label><input class="inp" type="password" id="loginPassword" placeholder="Min 6 characters"/></div>
-    <div style="text-align:right;margin-top:-8px;margin-bottom:12px"><span onclick="showForgotPassword()" style="font-size:12px;color:#E65100;font-weight:700;cursor:pointer">Forgot Password?</span></div>
+    <div style="text-align:center;margin-top:-4px;margin-bottom:14px"><span onclick="showForgotPassword()" style="font-size:13px;color:#E65100;font-weight:800;cursor:pointer;text-decoration:underline">🔑 Forgot Password?</span></div>
     <div class="fg"><label class="lbl">Display Name (first time only)</label><input class="inp" type="text" id="loginName" placeholder="e.g. Vijay / vkv"/></div>
     <button class="btn-primary" onclick="doEmailLogin()" style="margin-bottom:8px">Sign In / Sign Up</button>
     <div style="font-size:11px;color:#90A4AE;text-align:center;font-weight:600">Your data is encrypted and safe on cloud ☁️</div>
@@ -184,6 +189,7 @@ textarea.inp{resize:none;height:72px;}
     </div>
   </div>
   <div class="nw-bar" id="homeNW"></div>
+  <div id="upgradeBanner"></div>
   <div id="dueBanner"></div>
   <div style="padding-top:10px" id="homeMenu"></div>
 </div>
@@ -331,7 +337,44 @@ textarea.inp{resize:none;height:72px;}
 </div><!-- #app -->
 
 <script>
-// ── SUPABASE SETUP ──
+// ── RAZORPAY ──
+var RZP_KEY='rzp_live_SWaW0o2vM1Irpq';
+var PREMIUM_PRICE=29900; // Rs.299 in paise
+
+async function startPayment(){
+  var u=state.user;if(!u||!state.profile)return;
+  var options={
+    key:RZP_KEY,
+    amount:PREMIUM_PRICE,
+    currency:'INR',
+    name:'VKV Coder',
+    description:'मेरा हिसाब मेरे साथ — Premium 1 Year',
+    image:'https://vkv-coder.github.io/Mera-Hissab/favicon.ico',
+    prefill:{email:u.email,name:state.profile.name},
+    theme:{color:'#E65100'},
+    handler:async function(response){
+      // Payment successful
+      showToast('Payment successful! Activating premium...','info');
+      // Update plan in Supabase
+      await sb.from('mh_users').update({
+        plan:'premium',
+        premium_since:new Date().toISOString(),
+        premium_expires:new Date(Date.now()+365*24*60*60*1000).toISOString(),
+        razorpay_payment_id:response.razorpay_payment_id
+      }).eq('id',u.id);
+      state.profile.plan='premium';
+      showToast('🎉 Welcome to Premium!');
+      renderHome();
+    },
+    modal:{ondismiss:function(){showToast('Payment cancelled','error');}}
+  };
+  var rzp=new Razorpay(options);
+  rzp.open();
+}
+
+function isPremium(){
+  return state.profile&&state.profile.plan==='premium';
+}
 const SUPA_URL='https://jqqnnkzozjskziaizajg.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpxcW5ua3pvempza3ppYWl6YWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5Mjk1ODAsImV4cCI6MjA4ODUwNTU4MH0.sEYeWnm0dvuw8bLSVnQhqmgV8LB-pELjpuVIa3Us1Gg';
 const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
@@ -661,6 +704,19 @@ function renderHome(){
     '</div>'+
     (emiLiability>0?'<div style="margin-top:8px;background:rgba(211,47,47,0.25);border-radius:10px;padding:9px 14px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;color:#FFCDD2;font-weight:800">⚠️ EMI Pending</div><div style="font-size:17px;font-weight:900;color:#FFCDD2">-'+fmt(emiLiability)+'</div></div>':'');
   var due=dueReminders(),banner=document.getElementById('dueBanner');
+  // Show upgrade banner for free users
+  var upgradeBanner=!isPremium()?
+    '<div class="premium-banner" onclick="startPayment()" style="cursor:pointer">'+
+      '<div>'+
+        '<div style="font-size:13px;font-weight:900;color:#fff">⭐ Upgrade to Premium</div>'+
+        '<div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:2px">Multi-device sync · Cloud backup · ₹299/year</div>'+
+      '</div>'+
+      '<div style="background:#fff;color:#E65100;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:800">Upgrade</div>'+
+    '</div>':
+    '<div style="margin:8px 12px;background:linear-gradient(135deg,#FFD700,#FFA000);border-radius:14px;padding:10px 16px;text-align:center">'+
+      '<div style="font-size:12px;font-weight:900;color:#7B3000">⭐ Premium Active — Thank you!</div>'+
+    '</div>';
+  document.getElementById('upgradeBanner').innerHTML=upgradeBanner;
   if(due.length>0){var rows=due.map(function(r){var d=workingDaysUntil(r.due_day),lbl=d===0?'Today':d===1?'1 working day':'2 working days';return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><div><div style="font-size:12px;font-weight:800;color:#7B3000">'+r.name+'</div><div style="font-size:10px;font-weight:700;color:'+(d===0?'#D32F2F':'#E65100')+'">Due '+dueDateStr(r.due_day)+' ('+lbl+')</div></div><div style="font-size:12px;font-weight:900;color:#D32F2F">-'+fmt(r.amount)+'</div></div>';}).join('');banner.innerHTML='<div class="due-banner"><div style="font-size:11px;font-weight:900;color:#E65100;margin-bottom:8px">Payments Due Soon</div>'+rows+'<div style="font-size:10px;color:#E65100;font-weight:700;margin-top:6px;cursor:pointer" onclick="go(\'s-reminders\')">View all &rarr;</div></div>';}else banner.innerHTML='';
   var activeRem=(state.reminders||[]).filter(function(r){return r.active;}).length,dueCount=due.length;
   var remSubText=dueCount>0?dueCount+' Due':activeRem>0?'0 Due this month':activeRem+' active';
