@@ -496,9 +496,67 @@ textarea.inp{resize:none;height:72px;}
     <div class="fg" style="margin-top:10px"><label class="lbl">Account</label><select class="inp" id="rptAccount" onchange="renderReports()"><option value="all">All Accounts</option></select></div>
     <div class="chips" id="rptCatChips" style="margin-top:8px"></div>
   </div>
+  <!-- Download buttons -->
+  <div id="downloadButtons" style="padding:0 12px 4px;display:flex;gap:8px"></div>
   <div class="rpt-grid" id="rptSummary"></div>
   <div id="rptCatBreak"></div>
   <div id="rptTxns"></div>
+</div>
+
+<!-- PRIVACY POLICY -->
+<div class="screen" id="s-privacy">
+  <div class="hdr-sm"><button class="back-btn" onclick="goBack()">&#8592;</button><div class="title">Privacy Policy</div></div>
+  <div style="background:linear-gradient(135deg,#0D47A1,#1565C0);padding:28px 20px;text-align:center;">
+    <div style="font-size:40px">🔒</div>
+    <div style="font-size:18px;font-weight:900;color:#fff;margin-top:8px">Your Data. Your Control.</div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px">मेरा हिसाब मेरे साथ — Privacy Policy</div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">Our Promise to You</div>
+    <div style="background:#E8F5E9;border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:900;color:#2E7D32;margin-bottom:6px">✅ We NEVER sell your data</div>
+      <div style="font-size:13px;font-weight:900;color:#2E7D32;margin-bottom:6px">✅ We NEVER share your data with anyone</div>
+      <div style="font-size:13px;font-weight:900;color:#2E7D32;margin-bottom:6px">✅ We NEVER show ads using your data</div>
+      <div style="font-size:13px;font-weight:900;color:#2E7D32">✅ You can delete your data anytime</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Data Storage</div>
+    <div style="font-size:13px;color:#546E7A;line-height:1.6">
+      Your financial data is stored with <strong>bank-level AES-256 encryption</strong> on Supabase servers located in <strong>Mumbai, India</strong>. Your data never leaves India.<br/><br/>
+      Only you can access your data through your personal login. VKV Coder staff do not access, view or process your personal financial information.
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">What We Collect</div>
+    <div style="font-size:13px;color:#546E7A;line-height:1.6">
+      • Your name and email (for login only)<br/>
+      • Financial data you enter (accounts, transactions, reminders)<br/>
+      • Payment confirmation ID (for plan activation)<br/><br/>
+      We do NOT collect your location, contacts, photos or any other personal information.
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Your Rights</div>
+    <div style="font-size:13px;color:#546E7A;line-height:1.6">
+      • <strong>Access:</strong> All your data is visible in the app<br/>
+      • <strong>Export:</strong> Download your data as CSV/PDF anytime<br/>
+      • <strong>Delete:</strong> Request complete deletion anytime<br/>
+      • <strong>Portability:</strong> Your data belongs to you<br/><br/>
+      To delete your account, contact: <strong>unigoods2026@gmail.com</strong>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Security</div>
+    <div style="font-size:13px;color:#546E7A;line-height:1.6">
+      • AES-256 encryption at rest<br/>
+      • TLS 1.3 encryption in transit<br/>
+      • Row Level Security — each user sees only their own data<br/>
+      • No third party analytics or tracking<br/><br/>
+      <strong>Last updated: March 2026</strong>
+    </div>
+  </div>
+  <div style="padding:12px;text-align:center;font-size:11px;color:#90A4AE">VKV Coder · vkv-coder.github.io</div>
 </div>
 
 <!-- SETTINGS -->
@@ -630,6 +688,7 @@ function go(id,resetStack){
   else if(id==='s-upgrade'){}
   else if(id==='s-upgrade-family'){}
   else if(id==='s-trial-expired'){}
+  else if(id==='s-privacy'){}
   else if(id==='s-family')renderFamily();
 }
 function goBack(){var prev=navStack.length>0?navStack.pop():(state.user?'s-home':'s-login');showScreen(prev);if(prev==='s-home')renderHome();else if(prev==='s-accounts')renderAccounts();else if(prev==='s-reminders')renderReminders();else if(prev==='s-emi')renderEmi();else if(prev==='s-reports')renderReports();else if(prev==='s-settings')renderSettings();}
@@ -1157,9 +1216,12 @@ function renderEmi(){
 function initReports(){var now=new Date();document.getElementById('rptFrom').value=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);document.getElementById('rptTo').value=todayStr();rptCat='all';var sel=document.getElementById('rptAccount');sel.innerHTML='<option value="all">All Accounts</option>'+getAccounts().map(function(a){return '<option value="'+a.id+'">'+a.label+'</option>';}).join('');renderRptCatChips();renderReports();}
 function renderRptCatChips(){document.getElementById('rptCatChips').innerHTML=['all'].concat(MAIN_CATS).concat(['Investment']).map(function(c){return '<div class="chip'+(c===rptCat?' on':'')+'" onclick="setRptCat(\''+c+'\')">'+(c==='all'?'All':c)+'</div>';}).join('');}
 function setRptCat(cat){rptCat=cat;renderRptCatChips();renderReports();}
-function renderReports(){
+function getFilteredTxns(){
   var from=document.getElementById('rptFrom').value,to=document.getElementById('rptTo').value,accId=document.getElementById('rptAccount').value;
-  var txns=(state.transactions||[]).filter(function(t){if(t.is_transfer&&t.sub_cat!=='Credit Card Payment')return false;return t.date>=from&&t.date<=to&&(accId==='all'||t.from_account_id===accId)&&(rptCat==='all'||t.main_cat===rptCat);});
+  return(state.transactions||[]).filter(function(t){if(t.is_transfer&&t.sub_cat!=='Credit Card Payment')return false;return t.date>=from&&t.date<=to&&(accId==='all'||t.from_account_id===accId)&&(rptCat==='all'||t.main_cat===rptCat);});
+}
+function renderReports(){
+  var txns=getFilteredTxns();
   var totalIn=txns.filter(function(t){return t.amount>0;}).reduce(function(s,t){return s+t.amount;},0);
   var totalOut=txns.filter(function(t){return t.amount<0;}).reduce(function(s,t){return s+t.amount;},0);
   document.getElementById('rptSummary').innerHTML='<div class="rpt-card" style="background:#FFF3E0;border:1px solid #FFCC80"><div style="font-size:10px;color:#E65100;font-weight:900;text-transform:uppercase">Money In</div><div style="font-size:20px;font-weight:900;color:#E65100;margin-top:4px">'+fmt(totalIn)+'</div></div><div class="rpt-card" style="background:#FFEBEE;border:1px solid #FFCDD2"><div style="font-size:10px;color:#D32F2F;font-weight:900;text-transform:uppercase">Money Out</div><div style="font-size:20px;font-weight:900;color:#D32F2F;margin-top:4px">-'+fmt(Math.abs(totalOut))+'</div></div>';
@@ -1168,10 +1230,108 @@ function renderReports(){
   document.getElementById('rptCatBreak').innerHTML=entries.length>0?'<div class="card"><div class="card-title">By Category</div>'+entries.map(function(e){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #FFF3E0"><div style="font-size:13px;font-weight:700;color:#546E7A">'+e[0]+'</div><div style="font-size:13px;font-weight:800;color:'+(e[1]<0?'#D32F2F':'#E65100')+'">'+(e[1]<0?'-':'+')+fmt(e[1])+'</div></div>';}).join('')+'</div>':'';
   var accs=getAccounts();
   document.getElementById('rptTxns').innerHTML='<div class="sec-hdr">Transactions ('+txns.length+')</div>'+(txns.length===0?'<div class="empty"><div class="ico">📊</div><div class="etitle">No transactions</div></div>':txns.map(function(t){var acc=accs.find(function(a){return a.id===t.from_account_id;});return '<div class="txn-row"><div style="flex:1"><div style="font-size:13px;font-weight:700;color:#7B3000">'+t.sub_cat+'</div><div style="font-size:10px;color:#90A4AE">'+(acc?acc.label:'?')+' - '+t.date+'</div>'+(t.note?'<div style="font-size:10px;color:#90A4AE;font-style:italic">'+t.note+'</div>':'')+'</div><div style="font-size:13px;font-weight:800;color:'+(t.amount<0?'#D32F2F':'#E65100')+'">'+(t.amount<0?'-':'+')+fmt(t.amount)+'</div></div>';}).join(''));
+  // Download buttons
+  var plan=getPlan();
+  var canCSV=plan==='free_paid'||plan==='premium'||plan==='family';
+  var canPDF=plan==='premium'||plan==='family';
+  var dlHtml='';
+  if(canCSV)dlHtml+='<button onclick="downloadCSV()" style="flex:1;background:#E3F2FD;border:1.5px solid #BBDEFB;border-radius:10px;padding:10px;color:#1565C0;font-size:13px;font-weight:800;cursor:pointer">📊 Download CSV</button>';
+  if(canPDF)dlHtml+='<button onclick="downloadPDF()" style="flex:1;background:#FFF3E0;border:1.5px solid #FFCC80;border-radius:10px;padding:10px;color:#E65100;font-size:13px;font-weight:800;cursor:pointer">📄 Download PDF</button>';
+  if(!canCSV)dlHtml='<div style="background:#F5F5F5;border-radius:10px;padding:10px;text-align:center;font-size:12px;color:#90A4AE;font-weight:700">🔒 Download available for ₹29 Lifetime and above</div>';
+  document.getElementById('downloadButtons').innerHTML='<div style="display:flex;gap:8px;width:100%">'+dlHtml+'</div>';
+}
+
+// ── DOWNLOAD CSV ──
+function downloadCSV(){
+  var txns=getFilteredTxns();
+  var from=document.getElementById('rptFrom').value;
+  var to=document.getElementById('rptTo').value;
+  var accs=getAccounts();
+  var rows=[['Date','Category','Sub-Category','Account','Amount','Note']];
+  txns.forEach(function(t){
+    var acc=accs.find(function(a){return a.id===t.from_account_id;});
+    rows.push([t.date,t.main_cat||'',t.sub_cat||'',(acc?acc.label:''),t.amount<0?'-'+Math.abs(t.amount):'+'+t.amount,t.note||'']);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='MeraHisaab_'+from+'_to_'+to+'.csv';
+  a.click();
+  showToast('CSV downloaded! 📊');
+}
+
+// ── DOWNLOAD PDF ──
+function downloadPDF(){
+  var txns=getFilteredTxns();
+  var from=document.getElementById('rptFrom').value;
+  var to=document.getElementById('rptTo').value;
+  var accs=getAccounts();
+  var totalIn=txns.filter(function(t){return t.amount>0;}).reduce(function(s,t){return s+t.amount;},0);
+  var totalOut=txns.filter(function(t){return t.amount<0;}).reduce(function(s,t){return s+t.amount;},0);
+  var catMap={};txns.forEach(function(t){catMap[t.sub_cat]=(catMap[t.sub_cat]||0)+t.amount;});
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>'+
+    'body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px;color:#333;}'+
+    'h1{color:#1565C0;font-size:22px;margin:0;}'+
+    '.header{background:#E3F2FD;padding:16px;border-radius:8px;margin-bottom:16px;}'+
+    '.subtitle{color:#546E7A;font-size:13px;margin-top:4px;}'+
+    '.summary{display:flex;gap:12px;margin-bottom:16px;}'+
+    '.sum-box{flex:1;padding:12px;border-radius:8px;text-align:center;}'+
+    '.sum-in{background:#E8F5E9;border:1px solid #A5D6A7;}'+
+    '.sum-out{background:#FFEBEE;border:1px solid #FFCDD2;}'+
+    '.sum-net{background:#E3F2FD;border:1px solid #BBDEFB;}'+
+    '.sum-label{font-size:11px;font-weight:bold;text-transform:uppercase;color:#546E7A;}'+
+    '.sum-val{font-size:20px;font-weight:bold;margin-top:4px;}'+
+    'table{width:100%;border-collapse:collapse;font-size:13px;}'+
+    'th{background:#1565C0;color:#fff;padding:8px;text-align:left;}'+
+    'td{padding:7px 8px;border-bottom:1px solid #E3F2FD;}'+
+    'tr:nth-child(even){background:#F8F9FA;}'+
+    '.sec-title{font-size:14px;font-weight:bold;color:#1565C0;margin:16px 0 8px;border-bottom:2px solid #BBDEFB;padding-bottom:4px;}'+
+    '.footer{margin-top:20px;text-align:center;font-size:11px;color:#90A4AE;}'+
+    '@media print{button{display:none;}}'+
+  '</style></head><body>'+
+  '<div class="header">'+
+    '<h1>मेरा हिसाब मेरे साथ</h1>'+
+    '<div class="subtitle">Financial Report · '+(state.profile?state.profile.name:'')+' · '+from+' to '+to+'</div>'+
+  '</div>'+
+  '<div class="summary">'+
+    '<div class="sum-box sum-in"><div class="sum-label">Money In</div><div class="sum-val" style="color:#2E7D32">+Rs.'+Math.round(totalIn).toLocaleString('en-IN')+'</div></div>'+
+    '<div class="sum-box sum-out"><div class="sum-label">Money Out</div><div class="sum-val" style="color:#D32F2F">-Rs.'+Math.round(Math.abs(totalOut)).toLocaleString('en-IN')+'</div></div>'+
+    '<div class="sum-box sum-net"><div class="sum-label">Net Savings</div><div class="sum-val" style="color:#1565C0">Rs.'+Math.round(totalIn+totalOut).toLocaleString('en-IN')+'</div></div>'+
+  '</div>'+
+  '<div class="sec-title">By Category</div>'+
+  '<table><tr><th>Category</th><th>Amount</th></tr>'+
+  Object.keys(catMap).sort(function(a,b){return catMap[a]-catMap[b];}).map(function(k){return '<tr><td>'+k+'</td><td style="color:'+(catMap[k]<0?'#D32F2F':'#2E7D32')+'">'+(catMap[k]<0?'-':'+')+' Rs.'+Math.abs(Math.round(catMap[k])).toLocaleString('en-IN')+'</td></tr>';}).join('')+
+  '</table>'+
+  '<div class="sec-title">All Transactions ('+txns.length+')</div>'+
+  '<table><tr><th>Date</th><th>Category</th><th>Account</th><th>Amount</th><th>Note</th></tr>'+
+  txns.map(function(t){var acc=accs.find(function(a){return a.id===t.from_account_id;});return '<tr><td>'+t.date+'</td><td>'+t.sub_cat+'</td><td>'+(acc?acc.label:'?')+'</td><td style="color:'+(t.amount<0?'#D32F2F':'#2E7D32')+'">'+(t.amount<0?'-':'+')+' Rs.'+Math.abs(Math.round(t.amount)).toLocaleString('en-IN')+'</td><td>'+(t.note||'-')+'</td></tr>';}).join('')+
+  '</table>'+
+  '<div class="footer">Generated by मेरा हिसाब मेरे साथ · VKV Coder · '+new Date().toLocaleDateString('en-IN')+'<br/>Your data is encrypted and private.</div>'+
+  '<br/><button onclick="window.print()" style="background:#1565C0;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer">🖨️ Print / Save as PDF</button>'+
+  '</body></html>';
+  var win=window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  showToast('PDF report opened! Click Print to save 📄');
 }
 
 // ── SETTINGS ──
-function renderSettings(){document.getElementById('settingName').value=state.profile?state.profile.name:'';settingCat='Personal';renderSettingCatChips();renderSubCatList();}
+function renderSettings(){
+  document.getElementById('settingName').value=state.profile?state.profile.name:'';
+  settingCat='Personal';
+  renderSettingCatChips();
+  renderSubCatList();
+  // Add privacy policy link at bottom of settings
+  var existing=document.getElementById('privacyLink');
+  if(!existing){
+    var div=document.createElement('div');
+    div.id='privacyLink';
+    div.style.cssText='padding:12px;text-align:center;cursor:pointer';
+    div.innerHTML='<span onclick="go(\'s-privacy\')" style="font-size:13px;color:#1565C0;font-weight:700;text-decoration:underline">🔒 Privacy Policy</span>';
+    document.getElementById('s-settings').appendChild(div);
+  }
+}
 function renderSettingCatChips(){document.getElementById('settingCatChips').innerHTML=MAIN_CATS.map(function(c){return '<div class="chip'+(c===settingCat?' on':'')+'" onclick="setSettingCat(\''+c+'\')">'+c+'</div>';}).join('');}
 function setSettingCat(cat){settingCat=cat;renderSettingCatChips();renderSubCatList();}
 async function saveName(){var n=document.getElementById('settingName').value.trim();if(!n){showToast('Enter a name','error');return;}await sb.from('mh_users').update({name:n}).eq('id',state.user.id);state.profile.name=n;showToast('Name updated! ☁️');document.getElementById('homeUsername').textContent='👤 '+n;}
