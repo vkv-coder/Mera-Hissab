@@ -10,6 +10,24 @@
 <style>
 .premium-banner{margin:8px 12px;background:linear-gradient(135deg,#7B3000,#E65100);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}
 .premium-badge{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#FFD700,#FFA000);border-radius:100px;padding:3px 10px;font-size:10px;font-weight:800;color:#7B3000;}
+
+/* GOLD PREMIUM THEME */
+body.premium .hdr{background:linear-gradient(135deg,#7B5A00,#C49000,#F5C518) !important;}
+body.premium .hdr-sm{background:linear-gradient(135deg,#7B5A00,#C49000) !important;}
+body.premium .nw-bar{background:linear-gradient(160deg,#4A3500,#7B5A00,#C49000) !important;}
+body.premium .btn-primary{background:linear-gradient(135deg,#7B5A00,#C49000) !important;}
+body.premium .card{border-color:#FFE082 !important;}
+body.premium .card-title{color:#7B5A00 !important;}
+body.premium label.lbl{color:#7B5A00 !important;}
+body.premium input.inp,body.premium select.inp{background:#FFFDE7;border-color:#FFE082;color:#7B5A00 !important;}
+body.premium .sec-hdr{color:#7B5A00 !important;}
+body.premium .mi-title{color:#7B5A00 !important;}
+body.premium #app{background:#FFFDE7 !important;}
+body.premium body{background:#FFFDE7 !important;}
+
+/* BENEFITS SCREEN */
+.benefit-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #FFF3E0;}
+.benefit-row:last-child{border-bottom:none;}
 </style>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -176,6 +194,38 @@ textarea.inp{resize:none;height:72px;}
     <button class="btn-primary" onclick="doPasswordReset()" style="margin-bottom:10px">Send Reset Link</button>
     <button class="btn-sec" style="width:100%;text-align:center" onclick="go('s-login',true)">← Back to Login</button>
     <div style="font-size:11px;color:#90A4AE;text-align:center;margin-top:10px;font-weight:600">Check your email inbox and spam folder</div>
+  </div>
+</div>
+
+<!-- BENEFITS / UPGRADE SCREEN -->
+<div class="screen" id="s-upgrade">
+  <div style="background:linear-gradient(135deg,#7B3000,#E65100);padding:40px 20px 28px;text-align:center;">
+    <div style="font-size:48px">⭐</div>
+    <div style="font-size:22px;font-weight:900;color:#fff;margin-top:10px">Go Premium</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:6px">मेरा हिसाब मेरे साथ</div>
+    <div style="background:rgba(255,255,255,0.15);border-radius:100px;padding:6px 20px;display:inline-block;margin-top:10px;font-size:20px;font-weight:900;color:#FFD700">₹299 / year</div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">What you get</div>
+    <div class="benefit-row"><div style="width:36px;text-align:center;font-size:20px">📱</div><div style="flex:1;margin-left:12px"><div style="font-size:13px;font-weight:800;color:#7B3000">Use on All Devices</div><div style="font-size:11px;color:#90A4AE">Phone, tablet, laptop — all in sync</div></div><div style="color:#2E7D32;font-size:18px">✅</div></div>
+    <div class="benefit-row"><div style="width:36px;text-align:center;font-size:20px">☁️</div><div style="flex:1;margin-left:12px"><div style="font-size:13px;font-weight:800;color:#7B3000">Cloud Backup — Never Lose Data</div><div style="font-size:11px;color:#90A4AE">Data safe even if phone is lost</div></div><div style="color:#2E7D32;font-size:18px">✅</div></div>
+    <div class="benefit-row"><div style="width:36px;text-align:center;font-size:20px">👨‍👩‍👧</div><div style="flex:1;margin-left:12px"><div style="font-size:13px;font-weight:800;color:#7B3000">Family Access</div><div style="font-size:11px;color:#90A4AE">Husband & wife can use same account</div></div><div style="color:#2E7D32;font-size:18px">✅</div></div>
+    <div class="benefit-row"><div style="width:36px;text-align:center;font-size:20px">🔒</div><div style="flex:1;margin-left:12px"><div style="font-size:13px;font-weight:800;color:#7B3000">Secure & Private</div><div style="font-size:11px;color:#90A4AE">Your data encrypted, never shared</div></div><div style="color:#2E7D32;font-size:18px">✅</div></div>
+    <div class="benefit-row"><div style="width:36px;text-align:center;font-size:20px">🌟</div><div style="flex:1;margin-left:12px"><div style="font-size:13px;font-weight:800;color:#7B3000">Exclusive Gold Theme</div><div style="font-size:11px;color:#90A4AE">Premium look — feel the difference!</div></div><div style="color:#2E7D32;font-size:18px">✅</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Free vs Premium</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;text-align:center">
+      <div style="font-size:11px;font-weight:800;color:#90A4AE">Feature</div><div style="font-size:11px;font-weight:800;color:#90A4AE">Free</div><div style="font-size:11px;font-weight:800;color:#E65100">Premium ⭐</div>
+      <div style="font-size:11px;color:#546E7A;padding:6px 0;border-top:1px solid #FFF3E0">Devices</div><div style="font-size:11px;color:#D32F2F;padding:6px 0;border-top:1px solid #FFF3E0">1 only</div><div style="font-size:11px;color:#2E7D32;padding:6px 0;border-top:1px solid #FFF3E0">Unlimited</div>
+      <div style="font-size:11px;color:#546E7A;padding:6px 0;border-top:1px solid #FFF3E0">Backup</div><div style="font-size:11px;color:#D32F2F;padding:6px 0;border-top:1px solid #FFF3E0">❌</div><div style="font-size:11px;color:#2E7D32;padding:6px 0;border-top:1px solid #FFF3E0">☁️ Auto</div>
+      <div style="font-size:11px;color:#546E7A;padding:6px 0;border-top:1px solid #FFF3E0">Theme</div><div style="font-size:11px;color:#D32F2F;padding:6px 0;border-top:1px solid #FFF3E0">Orange</div><div style="font-size:11px;color:#2E7D32;padding:6px 0;border-top:1px solid #FFF3E0">🌟 Gold</div>
+      <div style="font-size:11px;color:#546E7A;padding:6px 0;border-top:1px solid #FFF3E0">Price</div><div style="font-size:11px;color:#2E7D32;padding:6px 0;border-top:1px solid #FFF3E0">₹0</div><div style="font-size:11px;color:#E65100;font-weight:800;padding:6px 0;border-top:1px solid #FFF3E0">₹299/yr</div>
+    </div>
+  </div>
+  <div style="padding:0 12px 12px">
+    <button class="btn-primary" onclick="startPayment()" style="font-size:16px;padding:15px">⭐ Upgrade Now — ₹299/year</button>
+    <button class="btn-sec" onclick="goBack()" style="width:100%;margin-top:8px;text-align:center">Maybe later</button>
   </div>
 </div>
 
@@ -412,6 +462,7 @@ function go(id,resetStack){
   else if(id==='s-reports')initReports();
   else if(id==='s-settings')renderSettings();
   else if(id==='s-newTxn')renderTxnForm();
+  else if(id==='s-upgrade'){}// static screen
 }
 function goBack(){var prev=navStack.length>0?navStack.pop():(state.user?'s-home':'s-login');showScreen(prev);if(prev==='s-home')renderHome();else if(prev==='s-accounts')renderAccounts();else if(prev==='s-reminders')renderReminders();else if(prev==='s-emi')renderEmi();else if(prev==='s-reports')renderReports();else if(prev==='s-settings')renderSettings();}
 
@@ -704,17 +755,23 @@ function renderHome(){
     '</div>'+
     (emiLiability>0?'<div style="margin-top:8px;background:rgba(211,47,47,0.25);border-radius:10px;padding:9px 14px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;color:#FFCDD2;font-weight:800">⚠️ EMI Pending</div><div style="font-size:17px;font-weight:900;color:#FFCDD2">-'+fmt(emiLiability)+'</div></div>':'');
   var due=dueReminders(),banner=document.getElementById('dueBanner');
+  // Apply gold theme for premium users
+  if(isPremium()){
+    document.body.classList.add('premium');
+  }else{
+    document.body.classList.remove('premium');
+  }
   // Show upgrade banner for free users
   var upgradeBanner=!isPremium()?
-    '<div class="premium-banner" onclick="startPayment()" style="cursor:pointer">'+
+    '<div class="premium-banner" onclick="go(\'s-upgrade\')" style="cursor:pointer">'+
       '<div>'+
         '<div style="font-size:13px;font-weight:900;color:#fff">⭐ Upgrade to Premium</div>'+
-        '<div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:2px">Multi-device sync · Cloud backup · ₹299/year</div>'+
+        '<div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:2px">Multi-device · Cloud backup · Gold theme · ₹299/year</div>'+
       '</div>'+
-      '<div style="background:#fff;color:#E65100;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:800">Upgrade</div>'+
+      '<div style="background:#fff;color:#E65100;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:800">See Benefits</div>'+
     '</div>':
-    '<div style="margin:8px 12px;background:linear-gradient(135deg,#FFD700,#FFA000);border-radius:14px;padding:10px 16px;text-align:center">'+
-      '<div style="font-size:12px;font-weight:900;color:#7B3000">⭐ Premium Active — Thank you!</div>'+
+    '<div style="margin:8px 12px;background:linear-gradient(135deg,#7B5A00,#C49000);border-radius:14px;padding:10px 16px;text-align:center">'+
+      '<div style="font-size:12px;font-weight:900;color:#fff">🌟 Premium Active — Gold Member!</div>'+
     '</div>';
   document.getElementById('upgradeBanner').innerHTML=upgradeBanner;
   if(due.length>0){var rows=due.map(function(r){var d=workingDaysUntil(r.due_day),lbl=d===0?'Today':d===1?'1 working day':'2 working days';return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><div><div style="font-size:12px;font-weight:800;color:#7B3000">'+r.name+'</div><div style="font-size:10px;font-weight:700;color:'+(d===0?'#D32F2F':'#E65100')+'">Due '+dueDateStr(r.due_day)+' ('+lbl+')</div></div><div style="font-size:12px;font-weight:900;color:#D32F2F">-'+fmt(r.amount)+'</div></div>';}).join('');banner.innerHTML='<div class="due-banner"><div style="font-size:11px;font-weight:900;color:#E65100;margin-bottom:8px">Payments Due Soon</div>'+rows+'<div style="font-size:10px;color:#E65100;font-weight:700;margin-top:6px;cursor:pointer" onclick="go(\'s-reminders\')">View all &rarr;</div></div>';}else banner.innerHTML='';
