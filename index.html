@@ -258,6 +258,46 @@ textarea.inp{resize:none;height:72px;}
   </div>
 </div>
 
+<!-- TRIAL EXPIRED PAYWALL -->
+<div class="screen" id="s-trial-expired">
+  <div style="background:linear-gradient(135deg,#0D47A1,#1565C0);padding:44px 20px 28px;text-align:center;">
+    <div style="font-size:54px">⏰</div>
+    <div style="font-size:22px;font-weight:900;color:#fff;margin-top:10px">Free Trial Ended</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:6px">Your 7-day trial is complete!</div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px">Your data is safe — choose a plan to continue</div>
+  </div>
+  <div class="card" style="margin-top:12px;border:2px solid #1565C0">
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:32px">🔵</div>
+      <div style="font-size:18px;font-weight:900;color:#1565C0">Continue Free</div>
+      <div style="font-size:13px;color:#90A4AE;margin-top:4px">Same app, this device only</div>
+      <div style="background:#E3F2FD;border-radius:100px;padding:6px 20px;display:inline-block;margin-top:8px;font-size:22px;font-weight:900;color:#1565C0">₹29 — One Time</div>
+      <div style="font-size:12px;color:#2E7D32;font-weight:800;margin-top:4px">Pay ₹29 and use for lifetime! 🎉</div>
+    </div>
+    <button onclick="startFreePayment()" style="width:100%;background:linear-gradient(135deg,#0D47A1,#1565C0);border:none;border-radius:11px;padding:13px;color:#fff;font-size:15px;font-weight:800;cursor:pointer">Pay ₹29 — Lifetime Access</button>
+  </div>
+  <div style="padding:8px 12px;text-align:center;font-size:13px;font-weight:800;color:#90A4AE">— OR upgrade for more features —</div>
+  <div class="card" style="border:2px solid #C49000">
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:32px">🌟</div>
+      <div style="font-size:18px;font-weight:900;color:#C49000">Go Premium</div>
+      <div style="font-size:13px;color:#90A4AE;margin-top:4px">All devices + Cloud backup + Gold theme</div>
+      <div style="background:#FFFDE7;border-radius:100px;padding:6px 20px;display:inline-block;margin-top:8px;font-size:22px;font-weight:900;color:#C49000">₹299 / year</div>
+    </div>
+    <button onclick="startPayment()" style="width:100%;background:linear-gradient(135deg,#7B5A00,#C49000);border:none;border-radius:11px;padding:13px;color:#fff;font-size:15px;font-weight:800;cursor:pointer">⭐ Upgrade to Premium</button>
+  </div>
+  <div class="card" style="border:2px solid #43A047">
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:32px">👨‍👩‍👧</div>
+      <div style="font-size:18px;font-weight:900;color:#2E7D32">Family Premium</div>
+      <div style="font-size:13px;color:#90A4AE;margin-top:4px">Head + 3 members + Green theme</div>
+      <div style="background:#F1F8E9;border-radius:100px;padding:6px 20px;display:inline-block;margin-top:8px;font-size:22px;font-weight:900;color:#2E7D32">₹599 / year</div>
+    </div>
+    <button onclick="startFamilyPayment()" style="width:100%;background:linear-gradient(135deg,#2E7D32,#43A047);border:none;border-radius:11px;padding:13px;color:#fff;font-size:15px;font-weight:800;cursor:pointer">👨‍👩‍👧 Go Family Premium</button>
+  </div>
+  <div style="padding:12px;text-align:center;font-size:11px;color:#90A4AE">Your data is safe and will not be deleted</div>
+</div>
+
 <!-- FAMILY PREMIUM BENEFITS SCREEN -->
 <div class="screen" id="s-upgrade-family">
   <div style="background:linear-gradient(135deg,#2E7D32,#43A047);padding:40px 20px 28px;text-align:center;">
@@ -485,6 +525,24 @@ textarea.inp{resize:none;height:72px;}
 var RZP_KEY='rzp_live_SWaW0o2vM1Irpq';
 var PREMIUM_PRICE=29900;
 var FAMILY_PRICE=59900;
+var FREE_PRICE=2900; // ₹29 one time
+
+// ── TRIAL LOGIC ──
+function getTrialDaysLeft(){
+  if(!state.profile||state.profile.plan!=='free')return 999;
+  var since=state.profile.trial_started_at||state.profile.created_at;
+  if(!since)return 7;
+  var start=new Date(since);
+  var now=new Date();
+  var daysPassed=Math.floor((now-start)/(1000*60*60*24));
+  return Math.max(0,7-daysPassed);
+}
+function isTrialExpired(){
+  return getPlan()==='free'&&getTrialDaysLeft()<=0;
+}
+function isTrialActive(){
+  return getPlan()==='free'&&getTrialDaysLeft()>0;
+}
 
 async function startPayment(){
   var u=state.user;if(!u||!state.profile)return;
@@ -493,6 +551,20 @@ async function startPayment(){
       showToast('Activating Premium...','info');
       await sb.from('mh_users').update({plan:'premium',premium_since:new Date().toISOString(),premium_expires:new Date(Date.now()+365*24*60*60*1000).toISOString(),razorpay_payment_id:response.razorpay_payment_id}).eq('id',u.id);
       state.profile.plan='premium';showToast('🌟 Welcome to Premium!');renderHome();
+    },modal:{ondismiss:function(){showToast('Payment cancelled','error');}}
+  };
+  new Razorpay(options).open();
+}
+
+async function startFreePayment(){
+  var u=state.user;if(!u||!state.profile)return;
+  var options={key:RZP_KEY,amount:FREE_PRICE,currency:'INR',name:'VKV Coder',description:'मेरा हिसाब — Lifetime Free Access',prefill:{email:u.email,name:state.profile.name},theme:{color:'#1565C0'},
+    handler:async function(response){
+      showToast('Activating lifetime access...','info');
+      await sb.from('mh_users').update({plan:'free_paid',razorpay_payment_id:response.razorpay_payment_id}).eq('id',u.id);
+      state.profile.plan='free_paid';
+      showToast('🎉 Pay ₹29 and use for lifetime!');
+      renderHome();
     },modal:{ondismiss:function(){showToast('Payment cancelled','error');}}
   };
   new Razorpay(options).open();
@@ -512,7 +584,9 @@ async function startFamilyPayment(){
 }
 
 function getPlan(){return state.profile?state.profile.plan:'free';}
+function isPaid(){var p=getPlan();return p!=='free';}
 function isPremium(){var p=getPlan();return p==='premium'||p==='family';}
+function isFreePaid(){return getPlan()==='free_paid';}
 function isFamily(){return getPlan()==='family';}
 function isFamilyHead(){return isFamily()&&(state.profile.is_family_head===true||state.profile.is_family_head==='true');}
 function isFamilyMember(){return isFamily()&&!isFamilyHead();}
@@ -555,6 +629,7 @@ function go(id,resetStack){
   else if(id==='s-newTxn')renderTxnForm();
   else if(id==='s-upgrade'){}
   else if(id==='s-upgrade-family'){}
+  else if(id==='s-trial-expired'){}
   else if(id==='s-family')renderFamily();
 }
 function goBack(){var prev=navStack.length>0?navStack.pop():(state.user?'s-home':'s-login');showScreen(prev);if(prev==='s-home')renderHome();else if(prev==='s-accounts')renderAccounts();else if(prev==='s-reminders')renderReminders();else if(prev==='s-emi')renderEmi();else if(prev==='s-reports')renderReports();else if(prev==='s-settings')renderSettings();}
@@ -611,11 +686,17 @@ async function loadOrCreateProfile(name){
       await sb.from('mh_users').update({name:name.trim()}).eq('id',state.user.id);
       data.name=name.trim();
     }
+    // Set trial start if not set
+    if(!data.trial_started_at){
+      await sb.from('mh_users').update({trial_started_at:new Date().toISOString()}).eq('id',state.user.id);
+      data.trial_started_at=new Date().toISOString();
+    }
     state.profile=data;
   }else{
     var n=(name&&name.trim())?name.trim():(state.user.user_metadata&&state.user.user_metadata.full_name)||state.user.email.split('@')[0];
-    var{data:d2}=await sb.from('mh_users').insert({id:state.user.id,name:n,email:state.user.email,plan:'free',is_family_head:false}).select().single();
-    state.profile=d2||{id:state.user.id,name:n,email:state.user.email,plan:'free',is_family_head:false};
+    var now=new Date().toISOString();
+    var{data:d2}=await sb.from('mh_users').insert({id:state.user.id,name:n,email:state.user.email,plan:'free',is_family_head:false,trial_started_at:now}).select().single();
+    state.profile=d2||{id:state.user.id,name:n,email:state.user.email,plan:'free',is_family_head:false,trial_started_at:now};
   }
 }
 async function loadAllData(){
@@ -722,6 +803,7 @@ async function applyBalanceDB(accId,delta){
   }
 }
 function openTxn(accountId,accountLabel,balance,isInvestment){
+  if(isTrialExpired()){go('s-trial-expired');return;}
   txnCtx={accountId:accountId,accountLabel:accountLabel,balance:balance,isInvestment:!!isInvestment};
   txnIsTransfer=false;txnIsExpense=true;txnIsDeposit=true;txnMainCat='Personal';txnSubCat='';txnOtherText='';
   go('s-newTxn');
@@ -854,17 +936,33 @@ function renderHome(){
   // Upgrade banner
   var plan=getPlan(),upgradeBanner='';
   if(plan==='free'){
+    var daysLeft=getTrialDaysLeft();
+    if(daysLeft>0){
+      var trialColor=daysLeft<=2?'#D32F2F':'#E65100';
+      upgradeBanner=
+        '<div style="margin:8px 12px;background:#FFF3E0;border:1.5px solid #FFB74D;border-radius:14px;padding:10px 14px">'+
+          '<div style="font-size:11px;font-weight:900;color:'+trialColor+';margin-bottom:6px">⏳ Free Trial — '+daysLeft+' day'+(daysLeft===1?'':'s')+' left</div>'+
+          '<div style="display:flex;gap:8px">'+
+          '<div style="flex:1;background:linear-gradient(135deg,#0D47A1,#1565C0);border-radius:10px;padding:8px;cursor:pointer;text-align:center" onclick="go(\'s-trial-expired\')">'+
+            '<div style="font-size:11px;font-weight:900;color:#fff">🔵 ₹29 Lifetime</div>'+
+          '</div>'+
+          '<div style="flex:1;background:linear-gradient(135deg,#7B5A00,#C49000);border-radius:10px;padding:8px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade\')">'+
+            '<div style="font-size:11px;font-weight:900;color:#fff">🌟 ₹299 Premium</div>'+
+          '</div>'+
+          '<div style="flex:1;background:linear-gradient(135deg,#2E7D32,#43A047);border-radius:10px;padding:8px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade-family\')">'+
+            '<div style="font-size:11px;font-weight:900;color:#fff">👨‍👩‍👧 ₹599 Family</div>'+
+          '</div>'+
+          '</div>'+
+        '</div>';
+    }
+  }else if(plan==='free_paid'){
     upgradeBanner=
       '<div style="margin:8px 12px;display:flex;gap:8px">'+
-      '<div style="flex:1;background:linear-gradient(135deg,#0D47A1,#1565C0);border-radius:14px;padding:12px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade\')">'+
-        '<div style="font-size:12px;font-weight:900;color:#FFD700">⭐ Premium</div>'+
-        '<div style="font-size:10px;color:rgba(255,255,255,0.8);margin-top:2px">₹299/year</div>'+
-        '<div style="background:#fff;color:#1565C0;border-radius:7px;padding:3px 8px;font-size:10px;font-weight:800;margin-top:6px;display:inline-block">See Benefits</div>'+
+      '<div style="flex:1;background:#E3F2FD;border:1.5px solid #BBDEFB;border-radius:14px;padding:10px;text-align:center">'+
+        '<div style="font-size:11px;font-weight:900;color:#1565C0">🔵 Lifetime Access ✅</div>'+
       '</div>'+
-      '<div style="flex:1;background:linear-gradient(135deg,#2E7D32,#43A047);border-radius:14px;padding:12px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade-family\')">'+
-        '<div style="font-size:12px;font-weight:900;color:#CCFF90">👨‍👩‍👧 Family</div>'+
-        '<div style="font-size:10px;color:rgba(255,255,255,0.8);margin-top:2px">₹599/year</div>'+
-        '<div style="background:#fff;color:#2E7D32;border-radius:7px;padding:3px 8px;font-size:10px;font-weight:800;margin-top:6px;display:inline-block">See Benefits</div>'+
+      '<div style="flex:1;background:linear-gradient(135deg,#0D47A1,#1565C0);border-radius:14px;padding:10px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade\')">'+
+        '<div style="font-size:11px;font-weight:900;color:#FFD700">⭐ Upgrade ₹299</div>'+
       '</div></div>';
   }else if(plan==='premium'){
     upgradeBanner=
@@ -910,6 +1008,7 @@ function renderAccounts(){
 
 // ── REMINDERS ──
 async function saveReminder(){
+  if(isTrialExpired()){go('s-trial-expired');return;}
   var u=state.user;if(!u)return;
   var name=document.getElementById('remName').value.trim();
   var amt=parseFloat(document.getElementById('remAmount').value);
