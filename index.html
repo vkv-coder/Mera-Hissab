@@ -1303,29 +1303,30 @@ function downloadPDF(){
   var totalIn=txns.filter(function(t){return t.amount>0;}).reduce(function(s,t){return s+t.amount;},0);
   var totalOut=txns.filter(function(t){return t.amount<0;}).reduce(function(s,t){return s+t.amount;},0);
   var catMap={};txns.forEach(function(t){catMap[t.sub_cat]=(catMap[t.sub_cat]||0)+t.amount;});
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>'+
-    'body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px;color:#333;}'+
-    'h1{color:#1565C0;font-size:22px;margin:0;}'+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><style>'+
+    'body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:16px;color:#333;font-size:14px;padding-bottom:80px;}'+
+    'h1{color:#1565C0;font-size:20px;margin:0;}'+
     '.header{background:#E3F2FD;padding:16px;border-radius:8px;margin-bottom:16px;}'+
     '.subtitle{color:#546E7A;font-size:13px;margin-top:4px;}'+
-    '.summary{display:flex;gap:12px;margin-bottom:16px;}'+
-    '.sum-box{flex:1;padding:12px;border-radius:8px;text-align:center;}'+
+    '.summary{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}'+
+    '.sum-box{flex:1;min-width:90px;padding:12px;border-radius:8px;text-align:center;}'+
     '.sum-in{background:#E8F5E9;border:1px solid #A5D6A7;}'+
     '.sum-out{background:#FFEBEE;border:1px solid #FFCDD2;}'+
     '.sum-net{background:#E3F2FD;border:1px solid #BBDEFB;}'+
     '.sum-label{font-size:11px;font-weight:bold;text-transform:uppercase;color:#546E7A;}'+
-    '.sum-val{font-size:20px;font-weight:bold;margin-top:4px;}'+
+    '.sum-val{font-size:18px;font-weight:bold;margin-top:4px;}'+
     'table{width:100%;border-collapse:collapse;font-size:13px;}'+
-    'th{background:#1565C0;color:#fff;padding:8px;text-align:left;}'+
-    'td{padding:7px 8px;border-bottom:1px solid #E3F2FD;}'+
+    'th{background:#1565C0;color:#fff;padding:8px;text-align:left;font-size:12px;}'+
+    'td{padding:7px 8px;border-bottom:1px solid #E3F2FD;font-size:12px;}'+
     'tr:nth-child(even){background:#F8F9FA;}'+
-    '.sec-title{font-size:14px;font-weight:bold;color:#1565C0;margin:16px 0 8px;border-bottom:2px solid #BBDEFB;padding-bottom:4px;}'+
+    '.sec-title{font-size:15px;font-weight:bold;color:#1565C0;margin:16px 0 8px;border-bottom:2px solid #BBDEFB;padding-bottom:4px;}'+
     '.footer{margin-top:20px;text-align:center;font-size:11px;color:#90A4AE;}'+
-    '@media print{button{display:none;}}'+
+    '.print-btn{position:fixed;bottom:0;left:0;right:0;background:#1565C0;color:#fff;border:none;padding:18px;font-size:18px;font-weight:900;cursor:pointer;text-align:center;}'+
+    '@media print{.print-btn{display:none;}body{padding-bottom:0;}}'+
   '</style></head><body>'+
   '<div class="header">'+
     '<h1>मेरा हिसाब मेरे साथ</h1>'+
-    '<div class="subtitle">Financial Report · '+(state.profile?state.profile.name:'')+' · '+from+' to '+to+'</div>'+
+    '<div class="subtitle">Financial Report &middot; '+(state.profile?state.profile.name:'')+' &middot; '+from+' to '+to+'</div>'+
   '</div>'+
   '<div class="summary">'+
     '<div class="sum-box sum-in"><div class="sum-label">Money In</div><div class="sum-val" style="color:#2E7D32">+Rs.'+Math.round(totalIn).toLocaleString('en-IN')+'</div></div>'+
@@ -1334,14 +1335,14 @@ function downloadPDF(){
   '</div>'+
   '<div class="sec-title">By Category</div>'+
   '<table><tr><th>Category</th><th>Amount</th></tr>'+
-  Object.keys(catMap).sort(function(a,b){return catMap[a]-catMap[b];}).map(function(k){return '<tr><td>'+k+'</td><td style="color:'+(catMap[k]<0?'#D32F2F':'#2E7D32')+'">'+(catMap[k]<0?'-':'+')+' Rs.'+Math.abs(Math.round(catMap[k])).toLocaleString('en-IN')+'</td></tr>';}).join('')+
+  Object.keys(catMap).sort(function(a,b){return catMap[a]-catMap[b];}).map(function(k){return '<tr><td>'+k+'</td><td style="color:'+(catMap[k]<0?'#D32F2F':'#2E7D32')+'">'+(catMap[k]<0?'- ':'+ ')+'Rs.'+Math.abs(Math.round(catMap[k])).toLocaleString('en-IN')+'</td></tr>';}).join('')+
   '</table>'+
   '<div class="sec-title">All Transactions ('+txns.length+')</div>'+
-  '<table><tr><th>Date</th><th>Category</th><th>Account</th><th>Amount</th><th>Note</th></tr>'+
-  txns.map(function(t){var acc=accs.find(function(a){return a.id===t.from_account_id;});return '<tr><td>'+t.date+'</td><td>'+t.sub_cat+'</td><td>'+(acc?acc.label:'?')+'</td><td style="color:'+(t.amount<0?'#D32F2F':'#2E7D32')+'">'+(t.amount<0?'-':'+')+' Rs.'+Math.abs(Math.round(t.amount)).toLocaleString('en-IN')+'</td><td>'+(t.note||'-')+'</td></tr>';}).join('')+
+  '<table><tr><th>Date</th><th>Category</th><th>Amount</th><th>Note</th></tr>'+
+  txns.map(function(t){return '<tr><td>'+t.date+'</td><td>'+t.sub_cat+'</td><td style="color:'+(t.amount<0?'#D32F2F':'#2E7D32')+'">'+(t.amount<0?'- ':'+ ')+'Rs.'+Math.abs(Math.round(t.amount)).toLocaleString('en-IN')+'</td><td>'+(t.note||'-')+'</td></tr>';}).join('')+
   '</table>'+
-  '<div class="footer">Generated by मेरा हिसाब मेरे साथ · VKV Coder · '+new Date().toLocaleDateString('en-IN')+'<br/>Your data is encrypted and private.</div>'+
-  '<br/><button onclick="window.print()" style="background:#1565C0;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer">🖨️ Print / Save as PDF</button>'+
+  '<div class="footer">Generated by मेरा हिसाब मेरे साथ &middot; VKV Coder &middot; '+new Date().toLocaleDateString('en-IN')+'<br/>Your data is encrypted and private.</div>'+
+  '<button class="print-btn" onclick="window.print()">🖨️ Tap here — Print / Save as PDF</button>'+
   '</body></html>';
   var win=window.open('','_blank');
   win.document.write(html);
