@@ -345,6 +345,18 @@ textarea.inp{resize:none;height:72px;}
   </div>
 </div>
 
+<!-- MEMBER DASHBOARD (Head view only) -->
+<div class="screen" id="s-member-dash">
+  <div class="hdr-sm" style="background:linear-gradient(135deg,#2E7D32,#43A047)">
+    <button class="back-btn" onclick="goBack()">&#8592;</button>
+    <div class="title" id="memberDashTitle">Member Dashboard</div>
+  </div>
+  <div class="nw-bar" id="memberDashNW" style="background:linear-gradient(160deg,#1B5E20,#2E7D32,#43A047)"></div>
+  <div style="padding:12px;text-align:center;font-size:11px;color:#90A4AE;font-weight:700;background:#F1F8E9;margin:0 12px;border-radius:10px;margin-top:8px">
+    👁️ Summary view only — transaction details are private
+  </div>
+</div>
+
 <!-- MANAGE FAMILY (Head only) -->
 <div class="screen" id="s-family">
   <div class="hdr-sm"><button class="back-btn" onclick="goBack()">&#8592;</button><div class="title">👨‍👩‍👧 Manage Family</div></div>
@@ -695,6 +707,7 @@ function go(id,resetStack){
   else if(id==='s-upgrade-family'){}
   else if(id==='s-trial-expired'){}
   else if(id==='s-privacy'){}
+  else if(id==='s-member-dash'){}
   else if(id==='s-family')renderFamily();
 }
 function goBack(){var prev=navStack.length>0?navStack.pop():(state.user?'s-home':'s-login');showScreen(prev);if(prev==='s-home')renderHome();else if(prev==='s-accounts')renderAccounts();else if(prev==='s-reminders')renderReminders();else if(prev==='s-emi')renderEmi();else if(prev==='s-reports')renderReports();else if(prev==='s-settings')renderSettings();}
@@ -965,27 +978,17 @@ function dueReminders(){
 }
 function getYM(){var today=new Date();return today.getFullYear()+'-'+(today.getMonth()+1<10?'0':'')+(today.getMonth()+1);}
 function getPendingEmiLiability(){var ym=getYM();var total=0;(state.reminders||[]).forEach(function(r){if(!r.active)return;if(!state.reminderPayments[r.id+'-'+ym])total+=r.amount;});return total;}
-function renderHome(){
-  var u=state.user;if(!u||!state.profile)return;
-  document.getElementById('homeUsername').textContent='👤 '+state.profile.name;
-  var banks=state.accounts.filter(function(a){return a.type==='bank';}).reduce(function(s,a){return s+a.balance;},0);
-  var cards=state.accounts.filter(function(a){return a.type==='card';}).reduce(function(s,a){return s+a.balance;},0);
-  var cash=state.cashOnHand,investment=state.investment;
-  var emiLiability=getPendingEmiLiability();
-  var nw=banks+cards+cash+investment-emiLiability;
-  var now=new Date();
-  var ym=now.getFullYear()+'-'+(now.getMonth()+1<10?'0':'')+(now.getMonth()+1);
-  var monthlyExpense=(state.transactions||[]).filter(function(t){return !t.is_transfer&&t.amount<0&&!t.is_investment&&t.date&&t.date.startsWith(ym);}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
-  var monthlyInvestment=(state.transactions||[]).filter(function(t){return t.is_investment&&t.invest_type==='deposit'&&t.date&&t.date.startsWith(ym);}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
-  var monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthName,year){
+  // Net Worth = Banks + Cards + Cash - EMI (investment excluded)
+  var nw=banks+cards+cash-emiLiability;
   var nwColor=nw<0?'#FFCDD2':'#fff';
-  document.getElementById('homeNW').innerHTML=
-    '<div class="dash-month">'+monthNames[now.getMonth()]+' '+now.getFullYear()+'</div>'+
+  return '<div class="dash-month">'+monthName+' '+year+'</div>'+
     '<div class="monthly-row">'+
       '<div class="monthly-item"><div class="monthly-lbl">📉 Monthly Expense</div><div class="monthly-val exp">-'+fmt(monthlyExpense)+'</div></div>'+
       '<div class="monthly-item"><div class="monthly-lbl">📈 This Month Invest</div><div class="monthly-val inv">'+fmt(monthlyInvestment)+'</div></div>'+
     '</div>'+
-    '<div class="nw-center"><div class="nw-lbl-c">Net Worth</div><div class="nw-val-c" style="color:'+nwColor+'">'+(nw<0?'-':'')+fmt(nw)+'</div></div>'+
+    '<div class="nw-center"><div class="nw-lbl-c">Net Worth (Liquid)</div><div class="nw-val-c" style="color:'+nwColor+'">'+(nw<0?'-':'')+fmt(nw)+'</div></div>'+
     '<div class="stats-row">'+
       '<div class="stat-box"><div class="stat-lbl">🏦 Banks</div><div class="stat-val">'+fmt(banks)+'</div></div>'+
       '<div class="stat-box'+(cards<0?' danger':'')+'"><div class="stat-lbl">💳 CC Debt</div><div class="stat-val'+(cards<0?' red':'')+'">'+(cards<0?'-':'')+fmt(Math.abs(cards))+'</div></div>'+
@@ -993,6 +996,20 @@ function renderHome(){
       '<div class="stat-box"><div class="stat-lbl">📈 Invest</div><div class="stat-val green">'+fmt(investment)+'</div></div>'+
     '</div>'+
     (emiLiability>0?'<div style="margin-top:8px;background:rgba(211,47,47,0.25);border-radius:10px;padding:9px 14px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;color:#FFCDD2;font-weight:800">⚠️ EMI Pending</div><div style="font-size:17px;font-weight:900;color:#FFCDD2">-'+fmt(emiLiability)+'</div></div>':'');
+}
+function renderHome(){
+  var u=state.user;if(!u||!state.profile)return;
+  document.getElementById('homeUsername').textContent='👤 '+state.profile.name;
+  var banks=state.accounts.filter(function(a){return a.type==='bank';}).reduce(function(s,a){return s+a.balance;},0);
+  var cards=state.accounts.filter(function(a){return a.type==='card';}).reduce(function(s,a){return s+a.balance;},0);
+  var cash=state.cashOnHand,investment=state.investment;
+  var emiLiability=getPendingEmiLiability();
+  var now=new Date();
+  var ym=now.getFullYear()+'-'+(now.getMonth()+1<10?'0':'')+(now.getMonth()+1);
+  var monthlyExpense=(state.transactions||[]).filter(function(t){return !t.is_transfer&&t.amount<0&&!t.is_investment&&t.date&&t.date.startsWith(ym);}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
+  var monthlyInvestment=(state.transactions||[]).filter(function(t){return t.is_investment&&t.invest_type==='deposit'&&t.date&&t.date.startsWith(ym);}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
+  var monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('homeNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear());
   var due=dueReminders(),banner=document.getElementById('dueBanner');
   // Apply theme
   document.body.classList.remove('premium','family');
@@ -1409,7 +1426,11 @@ async function renderFamily(){
         (m.is_family_head?' <span style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:100px;font-weight:700">Head</span>':'')+'</div>'+
         '<div style="font-size:11px;color:#90A4AE">'+m.email+'</div>'+
       '</div>'+
-      (!m.is_family_head?'<button onclick="removeFamilyMember(\''+m.id+'\',\''+m.name+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:6px 10px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">Remove</button>':'')+
+      (!m.is_family_head?
+        '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'+
+          '<button onclick="viewMemberDash(\''+m.id+'\',\''+m.name+'\')" style="background:#E8F5E9;border:1px solid #A5D6A7;border-radius:9px;padding:6px 10px;color:#2E7D32;font-size:11px;font-weight:700;cursor:pointer">👁️ View</button>'+
+          '<button onclick="removeFamilyMember(\''+m.id+'\',\''+m.name+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:6px 10px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">Remove</button>'+
+        '</div>':'')+
       '</div></div>';
   });
   if(allMembers.length===1)html+='<div class="empty"><div class="ico">👥</div><div class="etitle">No members yet</div><div class="esub">Add family members above</div></div>';
@@ -1440,14 +1461,45 @@ async function addFamilyMember(){
   renderFamily();
 }
 
+async function viewMemberDash(memberId,memberName){
+  navStack.push(currentScreen);
+  showScreen('s-member-dash');
+  document.getElementById('memberDashTitle').textContent='👤 '+memberName;
+  document.getElementById('memberDashNW').innerHTML='<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.7)">Loading...</div>';
+  var uid=memberId;
+  var now=new Date();
+  var ym=now.getFullYear()+'-'+(now.getMonth()+1<10?'0':'')+(now.getMonth()+1);
+  var monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var[accsRes,txnsRes,remsRes,paysRes]=await Promise.all([
+    sb.from('mh_accounts').select('*').eq('user_id',uid),
+    sb.from('mh_transactions').select('*').eq('user_id',uid),
+    sb.from('mh_reminders').select('*').eq('user_id',uid),
+    sb.from('mh_payments').select('*').eq('user_id',uid)
+  ]);
+  var accs=accsRes.data||[];
+  var txns=txnsRes.data||[];
+  var rems=remsRes.data||[];
+  var pays=paysRes.data||[];
+  var banks=accs.filter(function(a){return a.type==='bank';}).reduce(function(s,a){return s+a.balance;},0);
+  var cards=accs.filter(function(a){return a.type==='card';}).reduce(function(s,a){return s+a.balance;},0);
+  var cashAcc=accs.find(function(a){return a.id==='cash-'+uid;});
+  var invAcc=accs.find(function(a){return a.id==='investment-'+uid;});
+  var cash=cashAcc?cashAcc.balance:0;
+  var investment=invAcc?invAcc.balance:0;
+  var remPayments={};
+  pays.forEach(function(p){remPayments[p.ref_id+'-'+p.month_key]=true;});
+  var emiLiability=rems.reduce(function(s,r){if(!r.active)return s;if(remPayments[r.id+'-'+ym])return s;return s+r.amount;},0);
+  var monthlyExpense=txns.filter(function(t){return !t.is_transfer&&t.amount<0&&!t.is_investment&&t.date&&t.date.startsWith(ym);}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
+  var monthlyInvestment=txns.filter(function(t){return t.is_investment&&t.invest_type==='deposit'&&t.date&&t.date.startsWith(ym);}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
+  document.getElementById('memberDashNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear());
+}
+
 async function removeFamilyMember(memberId,memberName){
   if(!confirm('Remove '+memberName+' from family? Their data will remain but they will lose family access.'))return;
   await sb.from('mh_users').update({family_head_id:null,plan:'free',is_family_head:false}).eq('id',memberId);
   showToast(memberName+' removed from family');
   renderFamily();
 }
-
-// ── FAMILY MANAGEMENT ──
 async function renderFamily(){
   var u=state.user;if(!u||!state.profile)return;
   var{data:members}=await sb.from('mh_users').select('id,name,email,is_family_head').eq('family_head_id',u.id);
