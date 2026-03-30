@@ -1415,18 +1415,19 @@ async function renderFamily(){
     hint.textContent=currentCount>=maxMembers?'Maximum 3 members reached — remove one to add another':'You can add '+(maxMembers-currentCount)+' more member(s)';
     hint.style.color=currentCount>=maxMembers?'#D32F2F':'#2E7D32';
   }
-  var allMembers=[{id:u.id,name:state.profile.name,email:u.email,is_family_head:true}].concat(members||[]);
+  var allMembers=[{id:u.id,name:state.profile.name,email:u.email,is_family_head:true}].concat((members||[]).map(function(m){return Object.assign({},m,{is_family_head:false});}));
   var html='';
   allMembers.forEach(function(m){
+    var isHead=m.is_family_head===true||m.is_family_head==='true';
     html+='<div class="mem-card">'+
       '<div style="display:flex;align-items:center;gap:12px">'+
-      '<div style="font-size:28px">'+(m.is_family_head?'👑':'👤')+'</div>'+
+      '<div style="font-size:28px">'+(isHead?'👑':'👤')+'</div>'+
       '<div style="flex:1">'+
         '<div style="font-size:14px;font-weight:800;color:#1B5E20">'+m.name+
-        (m.is_family_head?' <span style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:100px;font-weight:700">Head</span>':'')+'</div>'+
+        (isHead?' <span style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:100px;font-weight:700">Head</span>':'')+'</div>'+
         '<div style="font-size:11px;color:#90A4AE">'+m.email+'</div>'+
       '</div>'+
-      (!m.is_family_head?
+      (!isHead?
         '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'+
           '<button onclick="viewMemberDash(\''+m.id+'\',\''+m.name+'\')" style="background:#E8F5E9;border:1px solid #A5D6A7;border-radius:9px;padding:6px 10px;color:#2E7D32;font-size:11px;font-weight:700;cursor:pointer">👁️ View</button>'+
           '<button onclick="removeFamilyMember(\''+m.id+'\',\''+m.name+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:6px 10px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">Remove</button>'+
