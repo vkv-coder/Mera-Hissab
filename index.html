@@ -528,12 +528,18 @@ textarea.inp{resize:none;height:72px;}
     </div>
   </div>
   <div class="card">
-    <div class="card-title">What We Collect</div>
+    <div class="card-title">What We Store (On YOUR Behalf)</div>
     <div style="font-size:13px;color:#546E7A;line-height:1.6">
-      • Your name and email (for login only)<br/>
-      • Financial data you enter (accounts, transactions, reminders)<br/>
-      • Payment confirmation ID (for plan activation)<br/><br/>
-      We do NOT collect your location, contacts, photos or any other personal information.
+      • Your name and email — for login only<br/>
+      • Financial data YOU enter — stored securely for YOUR access only<br/>
+      • Payment confirmation ID — only to activate your plan<br/><br/>
+      <strong>We do NOT collect, read or process your personal financial data.</strong><br/>
+      Your data is stored FOR YOU, not BY US.<br/><br/>
+      We do NOT collect your location, contacts, photos or any device information.<br/><br/>
+      <div style="background:#E8F5E9;border-radius:8px;padding:10px;margin-top:4px">
+        <div style="font-size:13px;font-weight:800;color:#2E7D32">🔒 Think of us as a bank locker —</div>
+        <div style="font-size:12px;color:#2E7D32;margin-top:2px">We hold it safely, but only YOU have the key!</div>
+      </div>
     </div>
   </div>
   <div class="card">
@@ -1262,7 +1268,7 @@ function renderReports(){
   var entries=Object.keys(catMap).map(function(k){return[k,catMap[k]];}).sort(function(a,b){return a[1]-b[1];});
   document.getElementById('rptCatBreak').innerHTML=entries.length>0?'<div class="card"><div class="card-title">By Category</div>'+entries.map(function(e){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #FFF3E0"><div style="font-size:13px;font-weight:700;color:#546E7A">'+e[0]+'</div><div style="font-size:13px;font-weight:800;color:'+(e[1]<0?'#D32F2F':'#E65100')+'">'+(e[1]<0?'-':'+')+fmt(e[1])+'</div></div>';}).join('')+'</div>':'';
   var accs=getAccounts();
-  document.getElementById('rptTxns').innerHTML='<div class="sec-hdr">Transactions ('+txns.length+')</div>'+(txns.length===0?'<div class="empty"><div class="ico">📊</div><div class="etitle">No transactions</div></div>':txns.map(function(t){var acc=accs.find(function(a){return a.id===t.from_account_id;});return '<div class="txn-row"><div style="flex:1"><div style="font-size:13px;font-weight:700;color:#7B3000">'+t.sub_cat+'</div><div style="font-size:10px;color:#90A4AE">'+(acc?acc.label:'?')+' - '+t.date+'</div>'+(t.note?'<div style="font-size:10px;color:#90A4AE;font-style:italic">'+t.note+'</div>':'')+'</div><div style="font-size:13px;font-weight:800;color:'+(t.amount<0?'#D32F2F':'#E65100')+'">'+(t.amount<0?'-':'+')+fmt(t.amount)+'</div></div>';}).join(''));
+  document.getElementById('rptTxns').innerHTML='<div class="sec-hdr">Transactions ('+txns.length+')</div>'+(txns.length===0?'<div class="empty"><div class="ico">📊</div><div class="etitle">No transactions</div></div>':txns.map(function(t){var acc=accs.find(function(a){return a.id===t.from_account_id;});return '<div class="txn-row"><div style="flex:1"><div style="font-size:13px;font-weight:700;color:#1A237E">'+t.sub_cat+'</div><div style="font-size:10px;color:#90A4AE">'+(acc?acc.label:'?')+' - '+t.date+'</div>'+(t.note?'<div style="font-size:10px;color:#90A4AE;font-style:italic">'+t.note+'</div>':'')+'</div><div style="display:flex;align-items:center;gap:8px"><div style="font-size:13px;font-weight:800;color:'+(t.amount<0?'#D32F2F':'#2E7D32')+'">'+(t.amount<0?'-':'+')+fmt(t.amount)+'</div><button onclick="deleteTxn('+t.id+')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:6px;padding:3px 8px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">Del</button></div></div>';}).join(''));
   // Download buttons
   var plan=getPlan();
   var canCSV=plan==='free_paid'||plan==='premium'||plan==='family';
@@ -1350,7 +1356,15 @@ function downloadPDF(){
   showToast('PDF report opened! Click Print to save 📄');
 }
 
-// ── SETTINGS ──
+async function deleteTxn(txnId){
+  if(!confirm('Delete this transaction?'))return;
+  var{error}=await sb.from('mh_transactions').delete().eq('id',txnId);
+  if(error){showToast('Error deleting','error');return;}
+  state.transactions=state.transactions.filter(function(t){return t.id!==txnId;});
+  showToast('Transaction deleted!');
+  renderReports();
+  renderHome();
+}
 function renderSettings(){
   document.getElementById('settingName').value=state.profile?state.profile.name:'';
   settingCat='Personal';
