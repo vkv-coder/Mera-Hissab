@@ -958,10 +958,10 @@ function dueReminders(){
 function getYM(){var today=new Date();return today.getFullYear()+'-'+(today.getMonth()+1<10?'0':'')+(today.getMonth()+1);}
 function getPendingEmiLiability(){var ym=getYM();var total=0;(state.reminders||[]).forEach(function(r){if(!r.active)return;if(!state.reminderPayments[r.id+'-'+ym])total+=r.amount;});return total;}
 
-function buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthName,year){
+function buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthName,year,lastEntryStr){
   var nw=banks+cards+cash-emiLiability;
   var nwColor=nw<0?'#FFCDD2':'#fff';
-  return '<div class="dash-month">'+monthName+' '+year+'</div>'+
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="dash-month">'+monthName+' '+year+'</div><div style="font-size:9px;color:rgba(255,255,255,0.7);font-weight:700">'+lastEntryStr+'</div></div>'+
     '<div class="monthly-row">'+
       '<div class="monthly-item"><div class="monthly-lbl">📉 Monthly Expense</div><div class="monthly-val exp">-'+fmt(monthlyExpense)+'</div></div>'+
       '<div class="monthly-item"><div class="monthly-lbl">📈 This Month Invest</div><div class="monthly-val inv">'+fmt(monthlyInvestment)+'</div></div>'+
@@ -987,7 +987,11 @@ function renderHome(){
   var monthlyExpense=(state.transactions||[]).filter(function(t){return !t.is_transfer&&t.amount<0&&!t.is_investment&&t.date&&t.date.startsWith(ym);}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
   var monthlyInvestment=(state.transactions||[]).filter(function(t){return t.is_investment&&t.invest_type==='deposit'&&t.date&&t.date.startsWith(ym);}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
   var monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  document.getElementById('homeNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear());
+  var lastTxn=state.transactions&&state.transactions.length>0?state.transactions[0]:null;
+  var lastEntryStr='';
+  if(lastTxn&&lastTxn.date){var lp=lastTxn.date.split('-');lastEntryStr='Last entry: '+parseInt(lp[2])+' '+monthNames[parseInt(lp[1])-1];}
+  else{lastEntryStr='No entries yet';}
+  document.getElementById('homeNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear(),lastEntryStr);
   var due=dueReminders(),banner=document.getElementById('dueBanner');
   document.body.classList.remove('premium','family');
   if(isFamily())document.body.classList.add('family');
@@ -1347,7 +1351,7 @@ async function viewMemberDash(memberId,memberName){
   var emiLiability=rems.reduce(function(s,r){if(!r.active)return s;if(remPayments[r.id+'-'+ym])return s;return s+r.amount;},0);
   var monthlyExpense=txns.filter(function(t){return !t.is_transfer&&t.amount<0&&!t.is_investment&&t.date&&t.date.startsWith(ym);}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
   var monthlyInvestment=txns.filter(function(t){return t.is_investment&&t.invest_type==='deposit'&&t.date&&t.date.startsWith(ym);}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
-  document.getElementById('memberDashNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear());
+  document.getElementById('memberDashNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear(),'');
 }
 
 async function removeFamilyMember(memberId,memberName){
