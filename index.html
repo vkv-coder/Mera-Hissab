@@ -1113,14 +1113,22 @@ function renderAccounts(){
   var uid=state.user.id;var html='';
   var banks=state.accounts.filter(function(a){return a.type==='bank';});
   var cards=state.accounts.filter(function(a){return a.type==='card';});
-  if(banks.length>0){html+='<div class="sec-hdr">🏦 Bank Accounts</div>';banks.forEach(function(b){html+='<div class="ar"><div class="ar-icon" style="background:#FFF3E0">🏦</div><div style="flex:1"><div style="font-size:13px;font-weight:800;color:#7B3000">'+b.name+'</div><div style="font-size:10px;color:#90A4AE">...'+b.last4+'</div></div><div style="font-size:14px;font-weight:900;color:#7B3000;margin-right:6px">'+fmt(b.balance)+'</div><button class="ar-edit" onclick="openEditBal(\'bank\',\''+b.id+'\')">Edit</button><button class="ar-plus" onclick="openTxn(\''+b.id+'\',\''+b.name+' ...'+b.last4+'\','+b.balance+',false)">+</button></div>';});}
-  if(cards.length>0){html+='<div class="sec-hdr">💳 Credit Cards</div>';cards.forEach(function(c){html+='<div class="ar"><div class="ar-icon" style="background:#FFEBEE">💳</div><div style="flex:1"><div style="font-size:13px;font-weight:800;color:#7B3000">'+c.name+'</div><div style="font-size:10px;color:#90A4AE">...'+c.last4+'</div></div><div style="font-size:14px;font-weight:900;color:'+(c.balance<0?'#D32F2F':'#7B3000')+';margin-right:6px">'+(c.balance<0?'-':'')+fmt(c.balance)+'</div><button class="ar-edit" onclick="openEditBal(\'card\',\''+c.id+'\')">Edit</button><button class="ar-plus" onclick="openTxn(\''+c.id+'\',\''+c.name+' ...'+c.last4+'\','+c.balance+',false)">+</button></div>';});}
+  if(banks.length>0){html+='<div class="sec-hdr">🏦 Bank Accounts</div>';banks.forEach(function(b){html+='<div class="ar"><div class="ar-icon" style="background:#FFF3E0">🏦</div><div style="flex:1"><div style="font-size:13px;font-weight:800;color:#7B3000">'+b.name+'</div><div style="font-size:10px;color:#90A4AE">...'+b.last4+'</div></div><div style="font-size:14px;font-weight:900;color:#7B3000;margin-right:6px">'+fmt(b.balance)+'</div><button class="ar-edit" onclick="openEditBal(\'bank\',\''+b.id+'\')">Edit</button><button class="ar-edit" style="color:#D32F2F;border-color:#FFCDD2" onclick="deleteAccount(\''+b.id+'\',\''+b.name+'\')">Del</button><button class="ar-plus" onclick="openTxn(\''+b.id+'\',\''+b.name+' ...'+b.last4+'\','+b.balance+',false)">+</button></div>';});}
+  if(cards.length>0){html+='<div class="sec-hdr">💳 Credit Cards</div>';cards.forEach(function(c){html+='<div class="ar"><div class="ar-icon" style="background:#FFEBEE">💳</div><div style="flex:1"><div style="font-size:13px;font-weight:800;color:#7B3000">'+c.name+'</div><div style="font-size:10px;color:#90A4AE">...'+c.last4+'</div></div><div style="font-size:14px;font-weight:900;color:'+(c.balance<0?'#D32F2F':'#7B3000')+';margin-right:6px">'+(c.balance<0?'-':'')+fmt(c.balance)+'</div><button class="ar-edit" onclick="openEditBal(\'card\',\''+c.id+'\')">Edit</button><button class="ar-edit" style="color:#D32F2F;border-color:#FFCDD2" onclick="deleteAccount(\''+c.id+'\',\''+c.name+'\')">Del</button><button class="ar-plus" onclick="openTxn(\''+c.id+'\',\''+c.name+' ...'+c.last4+'\','+c.balance+',false)">+</button></div>';});}
   html+='<div class="sec-hdr">💵 Cash on Hand</div><div class="ar"><div class="ar-icon" style="background:#FFF3E0">💵</div><div style="flex:1"><div style="font-size:13px;font-weight:800;color:#7B3000">Cash</div></div><div style="font-size:14px;font-weight:900;color:#7B3000;margin-right:6px">'+fmt(state.cashOnHand)+'</div><button class="ar-edit" onclick="openEditBal(\'cash\',\'cash-'+uid+'\')">Edit</button><button class="ar-plus" onclick="openTxn(\'cash-'+uid+'\',\'Cash on Hand\','+state.cashOnHand+',false)">+</button></div>';
   html+='<div class="sec-hdr">📈 Investment Fund</div><div class="ar"><div class="ar-icon" style="background:#FFF3E0">📈</div><div style="flex:1"><div style="font-size:13px;font-weight:800;color:#7B3000">Investment Fund</div><div style="font-size:10px;color:#90A4AE">Cumulative total</div></div><div style="font-size:14px;font-weight:900;color:#E65100;margin-right:6px">'+fmt(state.investment)+'</div><button class="ar-plus" onclick="openTxn(\'investment-'+uid+'\',\'Investment Fund\','+state.investment+',true)">+</button></div>';
   if(banks.length===0&&cards.length===0)html+='<div class="empty"><div class="ico">🏦</div><div class="etitle">No accounts yet</div><div class="esub">Tap &quot;+ Add&quot; above</div></div>';
   document.getElementById('accountsList').innerHTML=html;
 }
-
+async function deleteAccount(accId, accName){
+  if(!confirm('Delete "'+accName+'"? This will not delete past transactions.'))return;
+  var{error}=await sb.from('mh_accounts').delete().eq('id',accId);
+  if(error){showToast('Error deleting','error');return;}
+  state.accounts=state.accounts.filter(function(a){return a.id!==accId;});
+  showToast(accName+' deleted');
+  renderAccounts();
+  renderHome();
+}
 // ── REMINDERS ──
 async function saveReminder(){
   if(isTrialExpired()){go('s-trial-expired');return;}
