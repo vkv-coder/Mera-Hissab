@@ -200,7 +200,6 @@ textarea.inp{resize:none;height:72px;}
   </div>
   <div class="card">
     <div class="card-title">Sign In / Sign Up</div>
-
     <div class="fg"><label class="lbl">Email *</label><input class="inp" type="email" id="loginEmail" placeholder="yourname@gmail.com"/></div>
     <div class="fg"><label class="lbl">Password *</label><input class="inp" type="password" id="loginPassword" placeholder="Min 6 characters"/></div>
     <div style="text-align:center;margin-top:-4px;margin-bottom:14px"><span onclick="showForgotPassword()" style="font-size:13px;color:#E65100;font-weight:800;cursor:pointer;text-decoration:underline">🔑 Forgot Password?</span></div>
@@ -450,7 +449,6 @@ textarea.inp{resize:none;height:72px;}
       <div class="fg"><label class="lbl" style="color:#D32F2F">Note * (mandatory)</label><input class="inp" id="txnTransferNote" placeholder="e.g. Moving funds for EMI..."/></div>
       <div class="info" style="margin:0 0 10px">Transfer is not counted as income or expense</div>
     </div>
-    <!-- Investment source/destination account -->
     <div id="txnInvestAccountSection" style="display:none">
       <div class="fg"><label class="lbl" id="investAccLabel">From Account *</label>
         <select class="inp" id="investAccountSelect"><option value="">-- Select Account --</option></select>
@@ -508,7 +506,6 @@ textarea.inp{resize:none;height:72px;}
     <div class="fg" style="margin-top:10px"><label class="lbl">Account</label><select class="inp" id="rptAccount" onchange="renderReports()"><option value="all">All Accounts</option></select></div>
     <div class="chips" id="rptCatChips" style="margin-top:8px"></div>
   </div>
-  <!-- Download buttons -->
   <div id="downloadButtons" style="padding:0 12px 4px;display:flex;gap:8px"></div>
   <div class="rpt-grid" id="rptSummary"></div>
   <div id="rptCatBreak"></div>
@@ -561,7 +558,7 @@ textarea.inp{resize:none;height:72px;}
       • <strong>Export:</strong> Download your data as CSV/PDF anytime<br/>
       • <strong>Delete:</strong> Request complete deletion anytime<br/>
       • <strong>Portability:</strong> Your data belongs to you<br/><br/>
-      To delete your account, contact: <strong>unigoods2026@gmail.com</strong>
+      To delete your account, contact: <strong>vkvcoder.support@gmail.com</strong>
     </div>
   </div>
   <div class="card">
@@ -571,7 +568,7 @@ textarea.inp{resize:none;height:72px;}
       • TLS 1.3 encryption in transit<br/>
       • Row Level Security — each user sees only their own data<br/>
       • No third party analytics or tracking<br/><br/>
-      <strong>Last updated: March 2026</strong>
+      <strong>Last updated: April 2026</strong>
     </div>
   </div>
   <div style="padding:12px;text-align:center;font-size:11px;color:#90A4AE">VKV Coder · vkv-coder.github.io</div>
@@ -592,6 +589,13 @@ textarea.inp{resize:none;height:72px;}
     <button class="btn-primary" onclick="addSubCat()">Add Sub-Category</button>
   </div>
   <div id="subCatList"></div>
+  <div class="card" style="margin-top:0">
+    <div class="card-title">Support</div>
+    <div style="font-size:13px;color:#546E7A;line-height:1.8">
+      💬 Need help? We're here!<br/>
+      <a href="mailto:vkvcoder.support@gmail.com" style="color:#1565C0;font-weight:800;text-decoration:none">📧 vkvcoder.support@gmail.com</a>
+    </div>
+  </div>
 </div>
 
 </div><!-- #app -->
@@ -601,7 +605,7 @@ textarea.inp{resize:none;height:72px;}
 var RZP_KEY='rzp_live_SWaW0o2vM1Irpq';
 var PREMIUM_PRICE=29900;
 var FAMILY_PRICE=59900;
-var FREE_PRICE=2900; // ₹29 one time
+var FREE_PRICE=2900;
 
 // ── TRIAL LOGIC ──
 function getTrialDaysLeft(){
@@ -613,12 +617,8 @@ function getTrialDaysLeft(){
   var daysPassed=Math.floor((now-start)/(1000*60*60*24));
   return Math.max(0,7-daysPassed);
 }
-function isTrialExpired(){
-  return getPlan()==='free'&&getTrialDaysLeft()<=0;
-}
-function isTrialActive(){
-  return getPlan()==='free'&&getTrialDaysLeft()>0;
-}
+function isTrialExpired(){return getPlan()==='free'&&getTrialDaysLeft()<=0;}
+function isTrialActive(){return getPlan()==='free'&&getTrialDaysLeft()>0;}
 
 async function startPayment(){
   var u=state.user;if(!u||!state.profile)return;
@@ -631,7 +631,6 @@ async function startPayment(){
   };
   new Razorpay(options).open();
 }
-
 async function startFreePayment(){
   var u=state.user;if(!u||!state.profile)return;
   var options={key:RZP_KEY,amount:FREE_PRICE,currency:'INR',name:'VKV Coder',description:'मेरा हिसाब — Lifetime Free Access',prefill:{email:u.email,name:state.profile.name},theme:{color:'#1565C0'},
@@ -645,7 +644,6 @@ async function startFreePayment(){
   };
   new Razorpay(options).open();
 }
-
 async function startFamilyPayment(){
   var u=state.user;if(!u||!state.profile)return;
   var options={key:RZP_KEY,amount:FAMILY_PRICE,currency:'INR',name:'VKV Coder',description:'मेरा हिसाब — Family Premium 1 Year',prefill:{email:u.email,name:state.profile.name},theme:{color:'#2E7D32'},
@@ -703,21 +701,11 @@ function go(id,resetStack){
   else if(id==='s-reports')initReports();
   else if(id==='s-settings')renderSettings();
   else if(id==='s-newTxn')renderTxnForm();
-  else if(id==='s-upgrade'){}
-  else if(id==='s-upgrade-family'){}
-  else if(id==='s-trial-expired'){}
-  else if(id==='s-privacy'){}
-  else if(id==='s-member-dash'){}
   else if(id==='s-family')renderFamily();
 }
 function goBack(){var prev=navStack.length>0?navStack.pop():(state.user?'s-home':'s-login');showScreen(prev);if(prev==='s-home')renderHome();else if(prev==='s-accounts')renderAccounts();else if(prev==='s-reminders')renderReminders();else if(prev==='s-emi')renderEmi();else if(prev==='s-reports')renderReports();else if(prev==='s-settings')renderSettings();}
 
 // ── AUTH ──
-async function doGoogleLogin(){
-  showToast('Opening Google login...','info');
-  var{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href}});
-  if(error)showToast('Error: '+error.message,'error');
-}
 function showForgotPassword(){
   navStack.push(currentScreen);
   showScreen('s-forgot');
@@ -727,9 +715,7 @@ async function doPasswordReset(){
   var email=document.getElementById('resetEmail').value.trim().toLowerCase();
   if(!email){showToast('Enter your email','error');return;}
   showToast('Sending reset link...','info');
-  var{error}=await sb.auth.resetPasswordForEmail(email,{
-    redirectTo:window.location.href
-  });
+  var{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.href});
   if(error){showToast('Error: '+error.message,'error');return;}
   showToast('Reset link sent! Check your email 📧');
   setTimeout(function(){go('s-login',true);},2500);
@@ -740,10 +726,8 @@ async function doEmailLogin(){
   var name=document.getElementById('loginName').value.trim();
   if(!email||!password){showToast('Enter email and password','error');return;}
   showToast('Signing in...','info');
-  // Try sign in first
   var{data,error}=await sb.auth.signInWithPassword({email,password});
   if(error&&error.message.includes('Invalid')){
-    // New user - sign up
     if(!name){showToast('Enter your display name for first time signup','error');return;}
     var{data:d2,error:e2}=await sb.auth.signUp({email,password});
     if(e2){showToast('Error: '+e2.message,'error');return;}
@@ -764,7 +748,6 @@ async function loadOrCreateProfile(name){
       await sb.from('mh_users').update({name:name.trim()}).eq('id',state.user.id);
       data.name=name.trim();
     }
-    // Set trial start if not set
     if(!data.trial_started_at){
       await sb.from('mh_users').update({trial_started_at:new Date().toISOString()}).eq('id',state.user.id);
       data.trial_started_at=new Date().toISOString();
@@ -790,14 +773,12 @@ async function loadAllData(){
   state.transactions=txns.data||[];
   state.reminders=rems.data||[];
   state.emis=emis.data||[];
-  // payments
   var{data:pays}=await sb.from('mh_payments').select('*').eq('user_id',uid);
   state.emiPayments={};state.reminderPayments={};
   (pays||[]).forEach(function(p){
     if(p.ref_id.startsWith('e'))state.emiPayments[p.ref_id+'-'+p.month_key]=p.paid_from;
     else state.reminderPayments[p.ref_id+'-'+p.month_key]=true;
   });
-  // cash + investment from special accounts
   var cash=state.accounts.find(function(a){return a.id==='cash-'+uid;});
   var inv=state.accounts.find(function(a){return a.id==='investment-'+uid;});
   state.cashOnHand=cash?cash.balance:0;
@@ -823,17 +804,15 @@ async function saveAccount(){
   var u=state.user;if(!u)return;
   var bal=parseFloat(document.getElementById('accBalance').value)||0;
   var uid=u.id;
-  var acc;
   if(accType!=='cash'){
     var name=document.getElementById('accName').value.trim();if(!name){showToast('Enter account name','error');return;}
     var last4=document.getElementById('accLast4').value.trim()||'0000';
     var finalBal=accType==='card'?-Math.abs(bal):bal;
-    acc={id:accType+Date.now(),user_id:uid,type:accType,name:name,last4:last4,balance:finalBal};
+    var acc={id:accType+Date.now(),user_id:uid,type:accType,name:name,last4:last4,balance:finalBal};
     var{error}=await sb.from('mh_accounts').insert(acc);
     if(error){showToast('Error saving','error');return;}
     state.accounts.push(acc);
   }else{
-    // Cash is a special account
     var cashId='cash-'+uid;
     var existing=state.accounts.find(function(a){return a.id===cashId;});
     if(existing){await sb.from('mh_accounts').update({balance:bal}).eq('id',cashId);}
@@ -914,7 +893,6 @@ function setDepWith(isDep){
 }
 function renderInvestAccountOptions(type){
   var uid=state.user.id;
-  // All accounts except investment itself
   var accs=getAccounts().filter(function(a){return a.id!=='investment-'+uid;});
   var sel=document.getElementById('investAccountSelect');
   sel.innerHTML='<option value="">-- Select Account --</option>'+accs.map(function(a){return '<option value="'+a.id+'">'+a.label+' ('+fmt(a.balance)+')</option>';}).join('');
@@ -947,9 +925,7 @@ async function saveTxn(){
     var linkedAccId=document.getElementById('investAccountSelect').value;
     if(!linkedAccId){showToast(txnIsDeposit?'Select source account':'Select destination account','error');return;}
     var invAmt=txnIsDeposit?amt:-amt;
-    // Investment balance changes
     await applyBalanceDB('investment-'+uid,invAmt);
-    // Linked account balance changes opposite way
     await applyBalanceDB(linkedAccId,-invAmt);
     var note3=document.getElementById('txnNote').value.trim();
     txn={id:Date.now(),user_id:uid,date:date,from_account_id:linkedAccId,to_account_id:'investment-'+uid,amount:invAmt,is_transfer:false,is_investment:true,main_cat:'Investment',sub_cat:txnSubCat,invest_type:txnIsDeposit?'deposit':'withdrawal',note:note3};
@@ -971,7 +947,7 @@ function dueReminders(){
   var ym=getYM();
   return(state.reminders||[]).filter(function(r){
     if(!r.active)return false;
-    if(state.reminderPayments[r.id+'-'+ym])return false; // hide paid ones
+    if(state.reminderPayments[r.id+'-'+ym])return false;
     var d=workingDaysUntil(r.due_day);
     return d>=0&&d<=2;
   });
@@ -980,7 +956,6 @@ function getYM(){var today=new Date();return today.getFullYear()+'-'+(today.getM
 function getPendingEmiLiability(){var ym=getYM();var total=0;(state.reminders||[]).forEach(function(r){if(!r.active)return;if(!state.reminderPayments[r.id+'-'+ym])total+=r.amount;});return total;}
 
 function buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthName,year){
-  // Net Worth = Banks + Cards + Cash - EMI (investment excluded)
   var nw=banks+cards+cash-emiLiability;
   var nwColor=nw<0?'#FFCDD2':'#fff';
   return '<div class="dash-month">'+monthName+' '+year+'</div>'+
@@ -1011,59 +986,22 @@ function renderHome(){
   var monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   document.getElementById('homeNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear());
   var due=dueReminders(),banner=document.getElementById('dueBanner');
-  // Apply theme
   document.body.classList.remove('premium','family');
   if(isFamily())document.body.classList.add('family');
   else if(isPremium())document.body.classList.add('premium');
-  // Upgrade banner
   var plan=getPlan(),upgradeBanner='';
   if(plan==='free'){
     var daysLeft=getTrialDaysLeft();
     if(daysLeft>0){
       var trialColor=daysLeft<=2?'#D32F2F':'#E65100';
-      upgradeBanner=
-        '<div style="margin:8px 12px;background:#FFF3E0;border:1.5px solid #FFB74D;border-radius:14px;padding:10px 14px">'+
-          '<div style="font-size:11px;font-weight:900;color:'+trialColor+';margin-bottom:6px">⏳ Free Trial — '+daysLeft+' day'+(daysLeft===1?'':'s')+' left</div>'+
-          '<div style="display:flex;gap:8px">'+
-          '<div style="flex:1;background:linear-gradient(135deg,#0D47A1,#1565C0);border-radius:10px;padding:10px;cursor:pointer;text-align:center" onclick="go(\'s-trial-expired\')">'+
-            '<div style="font-size:13px;font-weight:900;color:#fff">🔵 ₹29</div>'+
-            '<div style="font-size:10px;color:rgba(255,255,255,0.85);font-weight:700">Lifetime</div>'+
-          '</div>'+
-          '<div style="flex:1;background:linear-gradient(135deg,#7B5A00,#C49000);border-radius:10px;padding:10px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade\')">'+
-            '<div style="font-size:13px;font-weight:900;color:#fff">🌟 ₹299</div>'+
-            '<div style="font-size:10px;color:rgba(255,255,255,0.85);font-weight:700">per year</div>'+
-          '</div>'+
-          '<div style="flex:1;background:linear-gradient(135deg,#2E7D32,#43A047);border-radius:10px;padding:10px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade-family\')">'+
-            '<div style="font-size:13px;font-weight:900;color:#fff">👨‍👩‍👧 ₹599</div>'+
-            '<div style="font-size:10px;color:rgba(255,255,255,0.85);font-weight:700">per year</div>'+
-          '</div>'+
-          '</div>'+
-        '</div>';
+      upgradeBanner='<div style="margin:8px 12px;background:#FFF3E0;border:1.5px solid #FFB74D;border-radius:14px;padding:10px 14px"><div style="font-size:11px;font-weight:900;color:'+trialColor+';margin-bottom:6px">⏳ Free Trial — '+daysLeft+' day'+(daysLeft===1?'':'s')+' left</div><div style="display:flex;gap:8px"><div style="flex:1;background:linear-gradient(135deg,#0D47A1,#1565C0);border-radius:10px;padding:10px;cursor:pointer;text-align:center" onclick="go(\'s-trial-expired\')"><div style="font-size:13px;font-weight:900;color:#fff">🔵 ₹29</div><div style="font-size:10px;color:rgba(255,255,255,0.85);font-weight:700">Lifetime</div></div><div style="flex:1;background:linear-gradient(135deg,#7B5A00,#C49000);border-radius:10px;padding:10px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade\')"><div style="font-size:13px;font-weight:900;color:#fff">🌟 ₹299</div><div style="font-size:10px;color:rgba(255,255,255,0.85);font-weight:700">per year</div></div><div style="flex:1;background:linear-gradient(135deg,#2E7D32,#43A047);border-radius:10px;padding:10px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade-family\')"><div style="font-size:13px;font-weight:900;color:#fff">👨‍👩‍👧 ₹599</div><div style="font-size:10px;color:rgba(255,255,255,0.85);font-weight:700">per year</div></div></div></div>';
     }
   }else if(plan==='free_paid'){
-    upgradeBanner=
-      '<div style="margin:8px 12px;display:flex;gap:8px">'+
-      '<div style="flex:1;background:#E3F2FD;border:1.5px solid #BBDEFB;border-radius:14px;padding:10px;text-align:center">'+
-        '<div style="font-size:11px;font-weight:900;color:#1565C0">🔵 Lifetime Access ✅</div>'+
-      '</div>'+
-      '<div style="flex:1;background:linear-gradient(135deg,#0D47A1,#1565C0);border-radius:14px;padding:10px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade\')">'+
-        '<div style="font-size:11px;font-weight:900;color:#FFD700">⭐ Upgrade ₹299</div>'+
-      '</div></div>';
+    upgradeBanner='<div style="margin:8px 12px;display:flex;gap:8px"><div style="flex:1;background:#E3F2FD;border:1.5px solid #BBDEFB;border-radius:14px;padding:10px;text-align:center"><div style="font-size:11px;font-weight:900;color:#1565C0">🔵 Lifetime Access ✅</div></div><div style="flex:1;background:linear-gradient(135deg,#0D47A1,#1565C0);border-radius:14px;padding:10px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade\')"><div style="font-size:11px;font-weight:900;color:#FFD700">⭐ Upgrade ₹299</div></div></div>';
   }else if(plan==='premium'){
-    upgradeBanner=
-      '<div style="margin:8px 12px;display:flex;gap:8px">'+
-      '<div style="flex:1;background:linear-gradient(135deg,#7B5A00,#C49000);border-radius:14px;padding:10px 16px;text-align:center">'+
-        '<div style="font-size:12px;font-weight:900;color:#fff">🌟 Premium Active</div>'+
-      '</div>'+
-      '<div style="flex:1;background:linear-gradient(135deg,#2E7D32,#43A047);border-radius:14px;padding:10px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade-family\')">'+
-        '<div style="font-size:11px;font-weight:900;color:#CCFF90">👨‍👩‍👧 Go Family</div>'+
-        '<div style="font-size:10px;color:rgba(255,255,255,0.8)">₹599/year</div>'+
-      '</div></div>';
+    upgradeBanner='<div style="margin:8px 12px;display:flex;gap:8px"><div style="flex:1;background:linear-gradient(135deg,#7B5A00,#C49000);border-radius:14px;padding:10px 16px;text-align:center"><div style="font-size:12px;font-weight:900;color:#fff">🌟 Premium Active</div></div><div style="flex:1;background:linear-gradient(135deg,#2E7D32,#43A047);border-radius:14px;padding:10px;cursor:pointer;text-align:center" onclick="go(\'s-upgrade-family\')"><div style="font-size:11px;font-weight:900;color:#CCFF90">👨‍👩‍👧 Go Family</div><div style="font-size:10px;color:rgba(255,255,255,0.8)">₹599/year</div></div></div>';
   }else if(plan==='family'){
-    upgradeBanner=
-      '<div style="margin:8px 12px;background:linear-gradient(135deg,#2E7D32,#43A047);border-radius:14px;padding:10px 16px;text-align:center">'+
-        '<div style="font-size:12px;font-weight:900;color:#CCFF90">👨‍👩‍👧 Family Premium Active'+(isFamilyHead()?' 👑 Head':'')+'</div>'+
-      '</div>';
+    upgradeBanner='<div style="margin:8px 12px;background:linear-gradient(135deg,#2E7D32,#43A047);border-radius:14px;padding:10px 16px;text-align:center"><div style="font-size:12px;font-weight:900;color:#CCFF90">👨‍👩‍👧 Family Premium Active'+(isFamilyHead()?' 👑 Head':'')+'</div></div>';
   }
   document.getElementById('upgradeBanner').innerHTML=upgradeBanner;
   if(due.length>0){var rows=due.map(function(r){var d=workingDaysUntil(r.due_day),lbl=d===0?'Today':d===1?'1 working day':'2 working days';return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><div><div style="font-size:12px;font-weight:800;color:#7B3000">'+r.name+'</div><div style="font-size:10px;font-weight:700;color:'+(d===0?'#D32F2F':'#E65100')+'">Due '+dueDateStr(r.due_day)+' ('+lbl+')</div></div><div style="font-size:12px;font-weight:900;color:#D32F2F">-'+fmt(r.amount)+'</div></div>';}).join('');banner.innerHTML='<div class="due-banner"><div style="font-size:11px;font-weight:900;color:#E65100;margin-bottom:8px">Payments Due Soon</div>'+rows+'<div style="font-size:10px;color:#E65100;font-weight:700;margin-top:6px;cursor:pointer" onclick="go(\'s-reminders\')">View all &rarr;</div></div>';}else banner.innerHTML='';
@@ -1075,36 +1013,15 @@ function renderHome(){
     '<div class="mi" onclick="go(\'s-reports\')"><div class="mi-icon" style="background:#F3E5F5">📈</div><div style="flex:1"><div class="mi-title">Reports</div><div class="mi-sub">Expenses &amp; income</div></div><div class="mi-arrow">&rsaquo;</div></div>'+
     '<div class="mi" onclick="go(\'s-reminders\')"><div class="mi-icon" style="background:#FFF8E1">🔔</div><div style="flex:1"><div class="mi-title">EMI &amp; Reminders</div><div class="mi-sub">'+remSubText+'</div></div>'+(dueCount>0?'<div class="mi-badge">'+dueCount+' Due</div>':'<div class="mi-arrow">&rsaquo;</div>')+'</div>'+
     (isFamilyHead()?'<div class="mi" onclick="go(\'s-family\')"><div class="mi-icon" style="background:#E8F5E9">👨‍👩‍👧</div><div style="flex:1"><div class="mi-title">Manage Family</div><div class="mi-sub">Add &amp; view members</div></div><div class="mi-arrow">&rsaquo;</div></div>':'')+
-    // Settings + Privacy Policy in one row
     '<div style="display:flex;gap:8px;margin:0 12px 8px">'+
-      '<div class="mi" onclick="go(\'s-settings\')" style="flex:1;margin:0">'+
-        '<div class="mi-icon" style="background:#FFF3E0">⚙️</div>'+
-        '<div style="flex:1"><div class="mi-title">Settings</div></div>'+
-        '<div class="mi-arrow">&rsaquo;</div>'+
-      '</div>'+
-      '<div class="mi" onclick="go(\'s-privacy\')" style="flex:1;margin:0">'+
-        '<div class="mi-icon" style="background:#E3F2FD">🔒</div>'+
-        '<div style="flex:1"><div class="mi-title">Privacy</div></div>'+
-        '<div class="mi-arrow">&rsaquo;</div>'+
-      '</div>'+
+      '<div class="mi" onclick="go(\'s-settings\')" style="flex:1;margin:0"><div class="mi-icon" style="background:#FFF3E0">⚙️</div><div style="flex:1"><div class="mi-title">Settings</div></div><div class="mi-arrow">&rsaquo;</div></div>'+
+      '<div class="mi" onclick="go(\'s-privacy\')" style="flex:1;margin:0"><div class="mi-icon" style="background:#E3F2FD">🔒</div><div style="flex:1"><div class="mi-title">Privacy</div></div><div class="mi-arrow">&rsaquo;</div></div>'+
     '</div>'+
-    // Download + Logout in one row
     '<div style="display:flex;gap:8px;margin:0 12px 8px">'+
       (canDownload?
-        '<div class="mi" onclick="go(\'s-reports\')" style="flex:1;margin:0">'+
-          '<div class="mi-icon" style="background:#E8F5E9">📥</div>'+
-          '<div style="flex:1"><div class="mi-title">Download</div><div class="mi-sub">CSV / PDF</div></div>'+
-          '<div class="mi-arrow">&rsaquo;</div>'+
-        '</div>':
-        '<div class="mi" onclick="go(\'s-trial-expired\')" style="flex:1;margin:0;opacity:0.6">'+
-          '<div class="mi-icon" style="background:#F5F5F5">📥</div>'+
-          '<div style="flex:1"><div class="mi-title">Download</div><div class="mi-sub">₹29+ only</div></div>'+
-          '<div class="mi-arrow">&rsaquo;</div>'+
-        '</div>')+
-      '<div class="mi" onclick="doLogout()" style="flex:1;margin:0">'+
-        '<div class="mi-icon" style="background:#FFEBEE">🚪</div>'+
-        '<div style="flex:1"><div class="mi-title" style="color:#D32F2F">Log Out</div></div>'+
-      '</div>'+
+        '<div class="mi" onclick="go(\'s-reports\')" style="flex:1;margin:0"><div class="mi-icon" style="background:#E8F5E9">📥</div><div style="flex:1"><div class="mi-title">Download</div><div class="mi-sub">CSV / PDF</div></div><div class="mi-arrow">&rsaquo;</div></div>':
+        '<div class="mi" onclick="go(\'s-trial-expired\')" style="flex:1;margin:0;opacity:0.6"><div class="mi-icon" style="background:#F5F5F5">📥</div><div style="flex:1"><div class="mi-title">Download</div><div class="mi-sub">₹29+ only</div></div><div class="mi-arrow">&rsaquo;</div></div>')+
+      '<div class="mi" onclick="doLogout()" style="flex:1;margin:0"><div class="mi-icon" style="background:#FFEBEE">🚪</div><div style="flex:1"><div class="mi-title" style="color:#D32F2F">Log Out</div></div></div>'+
     '</div>';
 }
 
@@ -1120,7 +1037,7 @@ function renderAccounts(){
   if(banks.length===0&&cards.length===0)html+='<div class="empty"><div class="ico">🏦</div><div class="etitle">No accounts yet</div><div class="esub">Tap &quot;+ Add&quot; above</div></div>';
   document.getElementById('accountsList').innerHTML=html;
 }
-async function deleteAccount(accId, accName){
+async function deleteAccount(accId,accName){
   if(!confirm('Delete "'+accName+'"? This will not delete past transactions.'))return;
   var uid=state.user.id;
   var{error}=await sb.from('mh_accounts').delete().eq('id',accId).eq('user_id',uid);
@@ -1130,6 +1047,7 @@ async function deleteAccount(accId, accName){
   renderAccounts();
   renderHome();
 }
+
 // ── REMINDERS ──
 async function saveReminder(){
   if(isTrialExpired()){go('s-trial-expired');return;}
@@ -1142,7 +1060,7 @@ async function saveReminder(){
   var rem={id:'r'+Date.now(),user_id:u.id,name:name,amount:amt,due_day:day,active:true};
   showToast('Saving...','info');
   var{error}=await sb.from('mh_reminders').insert(rem);
-  if(error){showToast('Error: '+error.message,'error');console.error('Save error:',error);return;}
+  if(error){showToast('Error: '+error.message,'error');return;}
   state.reminders.unshift(rem);
   showToast('Reminder saved! ☁️');
   toggleAddReminder();
@@ -1155,16 +1073,13 @@ async function markPaid(rid){
   var r=state.reminders.find(function(x){return x.id===rid;});if(!r)return;
   var ym=getYM();
   var key=rid+'-'+ym;
-  // Update local state immediately for instant UI response
   if(!state.reminderPayments)state.reminderPayments={};
   state.reminderPayments[key]=true;
   renderHome();renderReminders();
-  // Save to Supabase - delete first then insert to avoid any conflict
   await sb.from('mh_payments').delete().eq('id',key);
   var{error}=await sb.from('mh_payments').insert({id:key,user_id:u.id,ref_id:rid,month_key:ym,paid_from:'manual'});
   if(error){
     showToast('Save error - try again','error');
-    // Revert local state
     delete state.reminderPayments[key];
     renderHome();renderReminders();
     return;
@@ -1180,17 +1095,9 @@ function renderReminders(){
     html+='<div class="sec-hdr" style="color:#E65100">Due Within 2 Working Days</div>';
     due.forEach(function(r){
       var paid=!!state.reminderPayments[r.id+'-'+ym];
-      if(paid)return; // hide paid ones
+      if(paid)return;
       var d=workingDaysUntil(r.due_day),lbl=d===0?'Today':d===1?'1 working day':'2 working days';
-      html+='<div class="card" style="margin-top:0;border-left:3px solid '+(d===0?'#D32F2F':'#E65100')+'">'+
-        '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'+
-        '<div><div style="font-size:14px;font-weight:800;color:#7B3000">'+r.name+'</div>'+
-        '<div style="font-size:11px;font-weight:800;color:'+(d===0?'#D32F2F':'#E65100')+';margin-top:3px">Due '+dueDateStr(r.due_day)+' ('+lbl+')</div></div>'+
-        '<div style="font-size:15px;font-weight:900;color:#D32F2F">-'+fmt(r.amount)+'</div></div>'+
-        '<div style="display:flex;gap:7px">'+
-        '<button onclick="markPaid(\''+r.id+'\')" style="flex:1;background:#FFF3E0;border:1px solid #FFCC80;border-radius:9px;padding:8px;color:#E65100;font-size:12px;font-weight:800;cursor:pointer">Mark Paid</button>'+
-        '<button onclick="deleteReminder(\''+r.id+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:8px 11px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">X</button>'+
-        '</div></div>';
+      html+='<div class="card" style="margin-top:0;border-left:3px solid '+(d===0?'#D32F2F':'#E65100')+'"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:14px;font-weight:800;color:#7B3000">'+r.name+'</div><div style="font-size:11px;font-weight:800;color:'+(d===0?'#D32F2F':'#E65100')+';margin-top:3px">Due '+dueDateStr(r.due_day)+' ('+lbl+')</div></div><div style="font-size:15px;font-weight:900;color:#D32F2F">-'+fmt(r.amount)+'</div></div><div style="display:flex;gap:7px"><button onclick="markPaid(\''+r.id+'\')" style="flex:1;background:#FFF3E0;border:1px solid #FFCC80;border-radius:9px;padding:8px;color:#E65100;font-size:12px;font-weight:800;cursor:pointer">Mark Paid</button><button onclick="deleteReminder(\''+r.id+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:8px 11px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">X</button></div></div>';
     });
   }
   html+='<div class="sec-hdr">All Reminders</div>';
@@ -1198,20 +1105,11 @@ function renderReminders(){
   var shown=0;
   state.reminders.forEach(function(r){
     var paid=!!state.reminderPayments[r.id+'-'+ym];
-    if(paid)return; // hide paid ones - reappear next month automatically
+    if(paid)return;
     var d=workingDaysUntil(r.due_day);
-    if(r.active&&d>=0&&d<=2)return; // already shown in due section above
+    if(r.active&&d>=0&&d<=2)return;
     shown++;
-    html+='<div class="card" style="margin-top:0;opacity:'+(r.active?1:0.6)+'">'+
-      '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'+
-      '<div><div style="font-size:14px;font-weight:800;color:#7B3000">'+r.name+'</div>'+
-      '<div style="font-size:11px;font-weight:700;color:#90A4AE">Due '+dueDateStr(r.due_day)+'</div></div>'+
-      '<div style="font-size:15px;font-weight:900;color:#D32F2F">-'+fmt(r.amount)+'</div></div>'+
-      '<div style="display:flex;gap:7px">'+
-      '<button onclick="markPaid(\''+r.id+'\')" style="flex:1;background:#FFF3E0;border:1px solid #FFCC80;border-radius:9px;padding:7px;color:#E65100;font-size:12px;font-weight:800;cursor:pointer">Mark Paid</button>'+
-      '<button onclick="toggleReminder(\''+r.id+'\')" style="background:#FFF3E0;border:1px solid #BBDEFB;border-radius:9px;padding:7px 11px;color:#E65100;font-size:11px;font-weight:700;cursor:pointer">'+(r.active?'Pause':'Resume')+'</button>'+
-      '<button onclick="deleteReminder(\''+r.id+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:7px 11px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">X</button>'+
-      '</div></div>';
+    html+='<div class="card" style="margin-top:0;opacity:'+(r.active?1:0.6)+'"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:14px;font-weight:800;color:#7B3000">'+r.name+'</div><div style="font-size:11px;font-weight:700;color:#90A4AE">Due '+dueDateStr(r.due_day)+'</div></div><div style="font-size:15px;font-weight:900;color:#D32F2F">-'+fmt(r.amount)+'</div></div><div style="display:flex;gap:7px"><button onclick="markPaid(\''+r.id+'\')" style="flex:1;background:#FFF3E0;border:1px solid #FFCC80;border-radius:9px;padding:7px;color:#E65100;font-size:12px;font-weight:800;cursor:pointer">Mark Paid</button><button onclick="toggleReminder(\''+r.id+'\')" style="background:#FFF3E0;border:1px solid #BBDEFB;border-radius:9px;padding:7px 11px;color:#E65100;font-size:11px;font-weight:700;cursor:pointer">'+(r.active?'Pause':'Resume')+'</button><button onclick="deleteReminder(\''+r.id+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:7px 11px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">X</button></div></div>';
   });
   if(shown===0&&due.filter(function(r){return !state.reminderPayments[r.id+'-'+ym];}).length===0){
     html+='<div class="empty"><div class="ico">✅</div><div class="etitle">All paid this month!</div><div class="esub">Reminders will reappear next month</div></div>';
@@ -1295,7 +1193,6 @@ function renderReports(){
   document.getElementById('rptCatBreak').innerHTML=entries.length>0?'<div class="card"><div class="card-title">By Category</div>'+entries.map(function(e){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #FFF3E0"><div style="font-size:13px;font-weight:700;color:#546E7A">'+e[0]+'</div><div style="font-size:13px;font-weight:800;color:'+(e[1]<0?'#D32F2F':'#E65100')+'">'+(e[1]<0?'-':'+')+fmt(e[1])+'</div></div>';}).join('')+'</div>':'';
   var accs=getAccounts();
   document.getElementById('rptTxns').innerHTML='<div class="sec-hdr">Transactions ('+txns.length+')</div>'+(txns.length===0?'<div class="empty"><div class="ico">📊</div><div class="etitle">No transactions</div></div>':txns.map(function(t){var acc=accs.find(function(a){return a.id===t.from_account_id;});return '<div class="txn-row"><div style="flex:1"><div style="font-size:13px;font-weight:700;color:#1A237E">'+t.sub_cat+'</div><div style="font-size:10px;color:#90A4AE">'+(acc?acc.label:'?')+' - '+t.date+'</div>'+(t.note?'<div style="font-size:10px;color:#90A4AE;font-style:italic">'+t.note+'</div>':'')+'</div><div style="display:flex;align-items:center;gap:8px"><div style="font-size:13px;font-weight:800;color:'+(t.amount<0?'#D32F2F':'#2E7D32')+'">'+(t.amount<0?'-':'+')+fmt(t.amount)+'</div><button onclick="deleteTxn('+t.id+')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:6px;padding:3px 8px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">Del</button></div></div>';}).join(''));
-  // Download buttons
   var plan=getPlan();
   var canCSV=plan==='free_paid'||plan==='premium'||plan==='family';
   var canPDF=plan==='premium'||plan==='family';
@@ -1306,7 +1203,6 @@ function renderReports(){
   document.getElementById('downloadButtons').innerHTML='<div style="display:flex;gap:8px;width:100%">'+dlHtml+'</div>';
 }
 
-// ── DOWNLOAD CSV ──
 function downloadCSV(){
   var txns=getFilteredTxns();
   var from=document.getElementById('rptFrom').value;
@@ -1326,7 +1222,6 @@ function downloadCSV(){
   showToast('CSV downloaded! 📊');
 }
 
-// ── DOWNLOAD PDF ──
 function downloadPDF(){
   var txns=getFilteredTxns();
   var from=document.getElementById('rptFrom').value;
@@ -1335,47 +1230,13 @@ function downloadPDF(){
   var totalIn=txns.filter(function(t){return t.amount>0;}).reduce(function(s,t){return s+t.amount;},0);
   var totalOut=txns.filter(function(t){return t.amount<0;}).reduce(function(s,t){return s+t.amount;},0);
   var catMap={};txns.forEach(function(t){catMap[t.sub_cat]=(catMap[t.sub_cat]||0)+t.amount;});
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><style>'+
-    'body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:16px;color:#333;font-size:14px;padding-bottom:80px;}'+
-    'h1{color:#1565C0;font-size:20px;margin:0;}'+
-    '.header{background:#E3F2FD;padding:16px;border-radius:8px;margin-bottom:16px;}'+
-    '.subtitle{color:#546E7A;font-size:13px;margin-top:4px;}'+
-    '.summary{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}'+
-    '.sum-box{flex:1;min-width:90px;padding:12px;border-radius:8px;text-align:center;}'+
-    '.sum-in{background:#E8F5E9;border:1px solid #A5D6A7;}'+
-    '.sum-out{background:#FFEBEE;border:1px solid #FFCDD2;}'+
-    '.sum-net{background:#E3F2FD;border:1px solid #BBDEFB;}'+
-    '.sum-label{font-size:11px;font-weight:bold;text-transform:uppercase;color:#546E7A;}'+
-    '.sum-val{font-size:18px;font-weight:bold;margin-top:4px;}'+
-    'table{width:100%;border-collapse:collapse;font-size:13px;}'+
-    'th{background:#1565C0;color:#fff;padding:8px;text-align:left;font-size:12px;}'+
-    'td{padding:7px 8px;border-bottom:1px solid #E3F2FD;font-size:12px;}'+
-    'tr:nth-child(even){background:#F8F9FA;}'+
-    '.sec-title{font-size:15px;font-weight:bold;color:#1565C0;margin:16px 0 8px;border-bottom:2px solid #BBDEFB;padding-bottom:4px;}'+
-    '.footer{margin-top:20px;text-align:center;font-size:11px;color:#90A4AE;}'+
-    '.print-btn{position:fixed;bottom:0;left:0;right:0;background:#1565C0;color:#fff;border:none;padding:18px;font-size:18px;font-weight:900;cursor:pointer;text-align:center;}'+
-    '@media print{.print-btn{display:none;}body{padding-bottom:0;}}'+
-  '</style></head><body>'+
-  '<div class="header">'+
-    '<h1>मेरा हिसाब मेरे साथ</h1>'+
-    '<div class="subtitle">Financial Report &middot; '+(state.profile?state.profile.name:'')+' &middot; '+from+' to '+to+'</div>'+
-  '</div>'+
-  '<div class="summary">'+
-    '<div class="sum-box sum-in"><div class="sum-label">Money In</div><div class="sum-val" style="color:#2E7D32">+Rs.'+Math.round(totalIn).toLocaleString('en-IN')+'</div></div>'+
-    '<div class="sum-box sum-out"><div class="sum-label">Money Out</div><div class="sum-val" style="color:#D32F2F">-Rs.'+Math.round(Math.abs(totalOut)).toLocaleString('en-IN')+'</div></div>'+
-    '<div class="sum-box sum-net"><div class="sum-label">Net Savings</div><div class="sum-val" style="color:#1565C0">Rs.'+Math.round(totalIn+totalOut).toLocaleString('en-IN')+'</div></div>'+
-  '</div>'+
-  '<div class="sec-title">By Category</div>'+
-  '<table><tr><th>Category</th><th>Amount</th></tr>'+
-  Object.keys(catMap).sort(function(a,b){return catMap[a]-catMap[b];}).map(function(k){return '<tr><td>'+k+'</td><td style="color:'+(catMap[k]<0?'#D32F2F':'#2E7D32')+'">'+(catMap[k]<0?'- ':'+ ')+'Rs.'+Math.abs(Math.round(catMap[k])).toLocaleString('en-IN')+'</td></tr>';}).join('')+
-  '</table>'+
-  '<div class="sec-title">All Transactions ('+txns.length+')</div>'+
-  '<table><tr><th>Date</th><th>Category</th><th>Amount</th><th>Note</th></tr>'+
-  txns.map(function(t){return '<tr><td>'+t.date+'</td><td>'+t.sub_cat+'</td><td style="color:'+(t.amount<0?'#D32F2F':'#2E7D32')+'">'+(t.amount<0?'- ':'+ ')+'Rs.'+Math.abs(Math.round(t.amount)).toLocaleString('en-IN')+'</td><td>'+(t.note||'-')+'</td></tr>';}).join('')+
-  '</table>'+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:16px;color:#333;font-size:14px;padding-bottom:80px;}h1{color:#1565C0;font-size:20px;margin:0;}.header{background:#E3F2FD;padding:16px;border-radius:8px;margin-bottom:16px;}.subtitle{color:#546E7A;font-size:13px;margin-top:4px;}.summary{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}.sum-box{flex:1;min-width:90px;padding:12px;border-radius:8px;text-align:center;}.sum-in{background:#E8F5E9;border:1px solid #A5D6A7;}.sum-out{background:#FFEBEE;border:1px solid #FFCDD2;}.sum-net{background:#E3F2FD;border:1px solid #BBDEFB;}.sum-label{font-size:11px;font-weight:bold;text-transform:uppercase;color:#546E7A;}.sum-val{font-size:18px;font-weight:bold;margin-top:4px;}table{width:100%;border-collapse:collapse;font-size:13px;}th{background:#1565C0;color:#fff;padding:8px;text-align:left;font-size:12px;}td{padding:7px 8px;border-bottom:1px solid #E3F2FD;font-size:12px;}tr:nth-child(even){background:#F8F9FA;}.sec-title{font-size:15px;font-weight:bold;color:#1565C0;margin:16px 0 8px;border-bottom:2px solid #BBDEFB;padding-bottom:4px;}.footer{margin-top:20px;text-align:center;font-size:11px;color:#90A4AE;}.print-btn{position:fixed;bottom:0;left:0;right:0;background:#1565C0;color:#fff;border:none;padding:18px;font-size:18px;font-weight:900;cursor:pointer;text-align:center;}@media print{.print-btn{display:none;}body{padding-bottom:0;}}</style></head><body>'+
+  '<div class="header"><h1>मेरा हिसाब मेरे साथ</h1><div class="subtitle">Financial Report &middot; '+(state.profile?state.profile.name:'')+' &middot; '+from+' to '+to+'</div></div>'+
+  '<div class="summary"><div class="sum-box sum-in"><div class="sum-label">Money In</div><div class="sum-val" style="color:#2E7D32">+Rs.'+Math.round(totalIn).toLocaleString('en-IN')+'</div></div><div class="sum-box sum-out"><div class="sum-label">Money Out</div><div class="sum-val" style="color:#D32F2F">-Rs.'+Math.round(Math.abs(totalOut)).toLocaleString('en-IN')+'</div></div><div class="sum-box sum-net"><div class="sum-label">Net Savings</div><div class="sum-val" style="color:#1565C0">Rs.'+Math.round(totalIn+totalOut).toLocaleString('en-IN')+'</div></div></div>'+
+  '<div class="sec-title">By Category</div><table><tr><th>Category</th><th>Amount</th></tr>'+Object.keys(catMap).sort(function(a,b){return catMap[a]-catMap[b];}).map(function(k){return '<tr><td>'+k+'</td><td style="color:'+(catMap[k]<0?'#D32F2F':'#2E7D32')+'">'+(catMap[k]<0?'- ':'+ ')+'Rs.'+Math.abs(Math.round(catMap[k])).toLocaleString('en-IN')+'</td></tr>';}).join('')+'</table>'+
+  '<div class="sec-title">All Transactions ('+txns.length+')</div><table><tr><th>Date</th><th>Category</th><th>Amount</th><th>Note</th></tr>'+txns.map(function(t){return '<tr><td>'+t.date+'</td><td>'+t.sub_cat+'</td><td style="color:'+(t.amount<0?'#D32F2F':'#2E7D32')+'">'+(t.amount<0?'- ':'+ ')+'Rs.'+Math.abs(Math.round(t.amount)).toLocaleString('en-IN')+'</td><td>'+(t.note||'-')+'</td></tr>';}).join('')+'</table>'+
   '<div class="footer">Generated by मेरा हिसाब मेरे साथ &middot; VKV Coder &middot; '+new Date().toLocaleDateString('en-IN')+'<br/>Your data is encrypted and private.</div>'+
-  '<button class="print-btn" onclick="window.print()">🖨️ Tap here — Print / Save as PDF</button>'+
-  '</body></html>';
+  '<button class="print-btn" onclick="window.print()">🖨️ Tap here — Print / Save as PDF</button></body></html>';
   var win=window.open('','_blank');
   win.document.write(html);
   win.document.close();
@@ -1391,20 +1252,12 @@ async function deleteTxn(txnId){
   renderReports();
   renderHome();
 }
+
 function renderSettings(){
   document.getElementById('settingName').value=state.profile?state.profile.name:'';
   settingCat='Personal';
   renderSettingCatChips();
   renderSubCatList();
-  // Add privacy policy link at bottom of settings
-  var existing=document.getElementById('privacyLink');
-  if(!existing){
-    var div=document.createElement('div');
-    div.id='privacyLink';
-    div.style.cssText='padding:12px;text-align:center;cursor:pointer';
-    div.innerHTML='<span onclick="go(\'s-privacy\')" style="font-size:13px;color:#1565C0;font-weight:700;text-decoration:underline">🔒 Privacy Policy</span>';
-    document.getElementById('s-settings').appendChild(div);
-  }
 }
 function renderSettingCatChips(){document.getElementById('settingCatChips').innerHTML=MAIN_CATS.map(function(c){return '<div class="chip'+(c===settingCat?' on':'')+'" onclick="setSettingCat(\''+c+'\')">'+c+'</div>';}).join('');}
 function setSettingCat(cat){settingCat=cat;renderSettingCatChips();renderSubCatList();}
@@ -1415,33 +1268,25 @@ function renderSubCatList(){document.getElementById('subCatList').innerHTML=MAIN
 
 // ── FAMILY MANAGEMENT ──
 async function renderFamily(){
-  var u=state.user;if(!u)return;
+  var u=state.user;if(!u||!state.profile)return;
   var{data:members}=await sb.from('mh_users').select('id,name,email,is_family_head').eq('family_head_id',u.id);
   var currentCount=(members||[]).length;
   var maxMembers=3;
   var hint=document.getElementById('familyAddHint');
-  if(hint){
-    hint.textContent=currentCount>=maxMembers?'Maximum 3 members reached — remove one to add another':'You can add '+(maxMembers-currentCount)+' more member(s)';
-    hint.style.color=currentCount>=maxMembers?'#D32F2F':'#2E7D32';
+  var btn=document.getElementById('addMemBtn');
+  if(currentCount>=maxMembers){
+    hint.textContent='Maximum '+maxMembers+' members reached';
+    hint.style.color='#D32F2F';
+    if(btn)btn.disabled=true;
+  }else{
+    hint.textContent='You can add '+(maxMembers-currentCount)+' more member(s)';
+    hint.style.color='#2E7D32';
+    if(btn)btn.disabled=false;
   }
-  var allMembers=[{id:u.id,name:state.profile.name,email:u.email,is_family_head:true}].concat((members||[]).map(function(m){return Object.assign({},m,{is_family_head:false});}));
+  var allMembers=[{id:u.id,name:state.profile.name,email:u.email,is_family_head:true}].concat(members||[]);
   var html='';
   allMembers.forEach(function(m){
-    var isHead=m.is_family_head===true||m.is_family_head==='true';
-    html+='<div class="mem-card">'+
-      '<div style="display:flex;align-items:center;gap:12px">'+
-      '<div style="font-size:28px">'+(isHead?'👑':'👤')+'</div>'+
-      '<div style="flex:1">'+
-        '<div style="font-size:14px;font-weight:800;color:#1B5E20">'+m.name+
-        (isHead?' <span style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:100px;font-weight:700">Head</span>':'')+'</div>'+
-        '<div style="font-size:11px;color:#90A4AE">'+m.email+'</div>'+
-      '</div>'+
-      (!isHead?
-        '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'+
-          '<button onclick="viewMemberDash(\''+m.id+'\',\''+m.name+'\')" style="background:#E8F5E9;border:1px solid #A5D6A7;border-radius:9px;padding:6px 10px;color:#2E7D32;font-size:11px;font-weight:700;cursor:pointer">👁️ View</button>'+
-          '<button onclick="removeFamilyMember(\''+m.id+'\',\''+m.name+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:6px 10px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">Remove</button>'+
-        '</div>':'')+
-      '</div></div>';
+    html+='<div class="mem-card"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:32px">'+(m.is_family_head?'👑':'👤')+'</div><div style="flex:1"><div style="font-size:14px;font-weight:800;color:#1B5E20">'+m.name+(m.is_family_head?' <span style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:100px;font-weight:700">Head</span>':'')+'</div><div style="font-size:11px;color:#90A4AE">'+m.email+'</div></div>'+(!m.is_family_head?'<button onclick="viewMemberDash(\''+m.id+'\',\''+m.name+'\')" style="background:#E3F2FD;border:1px solid #BBDEFB;border-radius:9px;padding:6px 10px;color:#1565C0;font-size:11px;font-weight:700;cursor:pointer;margin-right:6px">View</button><button onclick="removeFamilyMember(\''+m.id+'\',\''+m.name+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:6px 10px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">Remove</button>':'')+  '</div></div>';
   });
   if(allMembers.length===1)html+='<div class="empty"><div class="ico">👥</div><div class="etitle">No members yet</div><div class="esub">Add family members above</div></div>';
   document.getElementById('familyMembersList').innerHTML=html;
@@ -1452,17 +1297,11 @@ async function addFamilyMember(){
   var name=document.getElementById('memName').value.trim();
   var email=document.getElementById('memEmail').value.trim().toLowerCase();
   if(!name||!email){showToast('Name and email required','error');return;}
-  // Check max
   var{data:existing}=await sb.from('mh_users').select('id').eq('family_head_id',u.id);
   if((existing||[]).length>=3){showToast('Maximum 3 members allowed','error');return;}
-  // Find the member by email
-  var{data:member}=await sb.from('mh_users').select('*').eq('email',email).single();
-  if(!member){
-    showToast(email+' has not registered yet. Ask them to sign up first!','error');
-    return;
-  }
+  var{data:member}=await sb.from('mh_users').select('*').eq('email',email).maybeSingle();
+  if(!member){showToast('Member not found! Ask '+name+' to sign up in app first, then add them here.','error');return;}
   if(member.id===u.id){showToast('Cannot add yourself as member','error');return;}
-  // Link member to this family
   var{error}=await sb.from('mh_users').update({family_head_id:u.id,plan:'family',is_family_head:false}).eq('id',member.id);
   if(error){showToast('Error: '+error.message,'error');return;}
   document.getElementById('memName').value='';
@@ -1486,10 +1325,7 @@ async function viewMemberDash(memberId,memberName){
     sb.from('mh_reminders').select('*').eq('user_id',uid),
     sb.from('mh_payments').select('*').eq('user_id',uid)
   ]);
-  var accs=accsRes.data||[];
-  var txns=txnsRes.data||[];
-  var rems=remsRes.data||[];
-  var pays=paysRes.data||[];
+  var accs=accsRes.data||[];var txns=txnsRes.data||[];var rems=remsRes.data||[];var pays=paysRes.data||[];
   var banks=accs.filter(function(a){return a.type==='bank';}).reduce(function(s,a){return s+a.balance;},0);
   var cards=accs.filter(function(a){return a.type==='card';}).reduce(function(s,a){return s+a.balance;},0);
   var cashAcc=accs.find(function(a){return a.id==='cash-'+uid;});
@@ -1505,77 +1341,6 @@ async function viewMemberDash(memberId,memberName){
 }
 
 async function removeFamilyMember(memberId,memberName){
-  if(!confirm('Remove '+memberName+' from family? Their data will remain but they will lose family access.'))return;
-  await sb.from('mh_users').update({family_head_id:null,plan:'free',is_family_head:false}).eq('id',memberId);
-  showToast(memberName+' removed from family');
-  renderFamily();
-}
-async function renderFamily(){
-  var u=state.user;if(!u||!state.profile)return;
-  var{data:members}=await sb.from('mh_users').select('id,name,email,is_family_head').eq('family_head_id',u.id);
-  var currentCount=(members||[]).length;
-  var maxMembers=3;
-  var hint=document.getElementById('familyAddHint');
-  var btn=document.getElementById('addMemBtn');
-  if(currentCount>=maxMembers){
-    hint.textContent='Maximum '+maxMembers+' members reached';
-    hint.style.color='#D32F2F';
-    if(btn)btn.disabled=true;
-  }else{
-    hint.textContent='You can add '+(maxMembers-currentCount)+' more member(s)';
-    hint.style.color='#2E7D32';
-    if(btn)btn.disabled=false;
-  }
-  var allMembers=[{id:u.id,name:state.profile.name,email:u.email,is_family_head:true}].concat(members||[]);
-  var html='';
-  allMembers.forEach(function(m){
-    html+='<div class="mem-card">'+
-      '<div style="display:flex;align-items:center;gap:12px">'+
-        '<div style="font-size:32px">'+(m.is_family_head?'👑':'👤')+'</div>'+
-        '<div style="flex:1">'+
-          '<div style="font-size:14px;font-weight:800;color:#1B5E20">'+m.name+
-            (m.is_family_head?' <span style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:100px;font-weight:700">Head</span>':'')+
-          '</div>'+
-          '<div style="font-size:11px;color:#90A4AE">'+m.email+'</div>'+
-        '</div>'+
-        (!m.is_family_head?
-          '<button onclick="viewMemberDash(\''+m.id+'\',\''+m.name+'\')" style="background:#E3F2FD;border:1px solid #BBDEFB;border-radius:9px;padding:6px 10px;color:#1565C0;font-size:11px;font-weight:700;cursor:pointer;margin-right:6px">View</button>'+
-          '<button onclick="removeFamilyMember(\''+m.id+'\',\''+m.name+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:6px 10px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">Remove</button>':
-          '')+
-      '</div>'+
-    '</div>';
-  });
-  if(allMembers.length===1){
-    html+='<div class="empty"><div class="ico">👥</div><div class="etitle">No members yet</div><div class="esub">Add family members above</div></div>';
-  }
-  document.getElementById('familyMembersList').innerHTML=html;
-}
-
-async function addFamilyMember(){
-  var u=state.user;if(!u)return;
-  var name=document.getElementById('memName').value.trim();
-  var email=document.getElementById('memEmail').value.trim().toLowerCase();
-  if(!name||!email){showToast('Name and email required','error');return;}
-  // Check max
-  var{data:existing}=await sb.from('mh_users').select('id').eq('family_head_id',u.id);
-  if((existing||[]).length>=3){showToast('Maximum 3 members allowed','error');return;}
-  // Find member by email
-  var{data:member}=await sb.from('mh_users').select('*').eq('email',email).maybeSingle();
-  if(!member){
-    showToast('Member not found! Ask '+name+' to sign up in app first, then add them here.','error');
-    return;
-  }
-  if(member.id===u.id){showToast('Cannot add yourself as member','error');return;}
-  // Link member to this family
-  var{error}=await sb.from('mh_users').update({family_head_id:u.id,plan:'family',is_family_head:false}).eq('id',member.id);
-  if(error){showToast('Error: '+error.message,'error');return;}
-  document.getElementById('memName').value='';
-  document.getElementById('memEmail').value='';
-  showToast(name+' added to family! ✅');
-  renderFamily();
-}
-
-async function removeFamilyMember(memberId,memberName){
   if(!confirm('Remove '+memberName+' from family?'))return;
   var{error}=await sb.from('mh_users').update({family_head_id:null,plan:'free',is_family_head:false}).eq('id',memberId);
   if(error){showToast('Error: '+error.message,'error');return;}
@@ -1585,7 +1350,6 @@ async function removeFamilyMember(memberId,memberName){
 
 // ── INIT ──
 window.onload=async function(){
-  // Check if already logged in
   var{data:{session}}=await sb.auth.getSession();
   setTimeout(async function(){
     document.getElementById('splash').style.display='none';
@@ -1599,10 +1363,8 @@ window.onload=async function(){
       go('s-login',true);
     }
   },1800);
-  // Listen for auth changes
   sb.auth.onAuthStateChange(async function(event,session){
     if(event==='PASSWORD_RECOVERY'){
-      // User clicked reset link — show update password prompt
       var newPass=prompt('Enter your new password (min 6 characters):');
       if(newPass&&newPass.length>=6){
         var{error}=await sb.auth.updateUser({password:newPass});
