@@ -49,7 +49,10 @@ body.family #app{background:#F1F8E9 !important;}
 body.family{background:#F1F8E9 !important;}
 body.family .chip{border-color:#A5D6A7 !important;color:#2E7D32 !important;}
 body.family .chip.on{background:#C8E6C9 !important;border-color:#2E7D32 !important;}
-body.family .tog{background:#C8E6C9 !important;}
+body.family .tog{background:#C8E6C9 !important;color:#546E7A !important;}
+body.family .tog.on{background:linear-gradient(135deg,#1B5E20,#2E7D32) !important;color:#fff !important;}
+body.family .tog.on-red{background:linear-gradient(135deg,#B71C1C,#D32F2F) !important;color:#fff !important;}
+body.family .tog.on-green{background:linear-gradient(135deg,#1B5E20,#2E7D32) !important;color:#fff !important;}
 body.family .ar-plus{background:linear-gradient(135deg,#2E7D32,#43A047) !important;}
 body.family .mi-arrow{color:#A5D6A7 !important;}
 
@@ -1021,6 +1024,15 @@ function renderHome(){
       (canDownload?
         '<div class="mi" onclick="go(\'s-reports\')" style="flex:1;margin:0"><div class="mi-icon" style="background:#E8F5E9">📥</div><div style="flex:1"><div class="mi-title">Download</div><div class="mi-sub">CSV / PDF</div></div><div class="mi-arrow">&rsaquo;</div></div>':
         '<div class="mi" onclick="go(\'s-trial-expired\')" style="flex:1;margin:0;opacity:0.6"><div class="mi-icon" style="background:#F5F5F5">📥</div><div style="flex:1"><div class="mi-title">Download</div><div class="mi-sub">₹29+ only</div></div><div class="mi-arrow">&rsaquo;</div></div>')+
+    '</div>'+
+    '<a href="mailto:vkvcoder.support@gmail.com" style="text-decoration:none;display:block;margin:0 12px 8px">'+
+      '<div class="mi" style="margin:0;background:linear-gradient(135deg,#E3F2FD,#BBDEFB)">'+
+        '<div class="mi-icon" style="background:#fff">💬</div>'+
+        '<div style="flex:1"><div class="mi-title" style="color:#1565C0">💬 Support</div><div class="mi-sub">vkvcoder.support@gmail.com</div></div>'+
+        '<div class="mi-arrow" style="color:#1565C0">&rsaquo;</div>'+
+      '</div>'+
+    '</a>'+
+    '<div style="display:flex;gap:8px;margin:0 12px 8px">'+
       '<div class="mi" onclick="doLogout()" style="flex:1;margin:0"><div class="mi-icon" style="background:#FFEBEE">🚪</div><div style="flex:1"><div class="mi-title" style="color:#D32F2F">Log Out</div></div></div>'+
     '</div>';
 }
