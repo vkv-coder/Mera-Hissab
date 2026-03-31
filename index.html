@@ -1122,7 +1122,8 @@ function renderAccounts(){
 }
 async function deleteAccount(accId, accName){
   if(!confirm('Delete "'+accName+'"? This will not delete past transactions.'))return;
-  var{error}=await sb.from('mh_accounts').delete().eq('id',accId);
+  var uid=state.user.id;
+  var{error}=await sb.from('mh_accounts').delete().eq('id',accId).eq('user_id',uid);
   if(error){showToast('Error deleting','error');return;}
   state.accounts=state.accounts.filter(function(a){return a.id!==accId;});
   showToast(accName+' deleted');
