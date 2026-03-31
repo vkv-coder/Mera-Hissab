@@ -1530,6 +1530,7 @@ async function renderFamily(){
           '<div style="font-size:11px;color:#90A4AE">'+m.email+'</div>'+
         '</div>'+
         (!m.is_family_head?
+          '<button onclick="viewMemberDash(\''+m.id+'\',\''+m.name+'\')" style="background:#E3F2FD;border:1px solid #BBDEFB;border-radius:9px;padding:6px 10px;color:#1565C0;font-size:11px;font-weight:700;cursor:pointer;margin-right:6px">View</button>'+
           '<button onclick="removeFamilyMember(\''+m.id+'\',\''+m.name+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:6px 10px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">Remove</button>':
           '')+
       '</div>'+
