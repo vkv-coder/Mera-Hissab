@@ -1364,13 +1364,41 @@ async function saveLoan(){
 }
 async function settleLoan(loanId){
   var loan=state.loans.find(function(l){return l.id===loanId;});if(!loan)return;
-  if(!confirm('Mark "'+loan.person+'" as settled?'))return;
-  var{error}=await sb.from('mh_loans').update({settled:true}).eq('id',loanId);
-  if(error){showToast('Error: '+error.message,'error');return;}
-  state.loans=state.loans.map(function(l){return l.id===loanId?Object.assign({},l,{settled:true}):l;});
-  showToast('Settled! ☁️');
-  renderLoans();
-  renderHome();
+  var isBorrowed=loan.type==='borrowed';
+  // Build account options
+  var accOptions=getAccounts().filter(function(a){return a.type==='bank'||a.type==='cash';});
+  var accHtml=accOptions.map(function(a){return '<option value="'+a.id+'">'+a.label+' ('+fmt(a.balance)+')</option>';}).join('');
+  // Show account selection dialog
+  var modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:900;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML='<div style="background:#fff;border-radius:18px 18px 0 0;padding:20px;width:100%;max-width:430px">'+
+    '<div style="font-size:15px;font-weight:800;color:#7B3000;margin-bottom:14px">Settle — '+loan.person+'</div>'+
+    '<div style="font-size:12px;color:#90A4AE;margin-bottom:10px">'+(isBorrowed?'Select account to repay FROM:':'Select account to receive INTO:')+'</div>'+
+    '<select id="settleAccSel" class="inp" style="margin-bottom:14px"><option value="">-- Select Account --</option>'+accHtml+'</select>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button id="settleConfirmBtn" style="flex:1;background:linear-gradient(135deg,#2E7D32,#43A047);border:none;border-radius:11px;padding:13px;color:#fff;font-size:14px;font-weight:800;cursor:pointer">Confirm Settled</button>'+
+      '<button id="settleCancelBtn" style="background:#E3F2FD;border:1.5px solid #BBDEFB;border-radius:11px;padding:10px 16px;color:#E65100;font-size:13px;font-weight:700;cursor:pointer">Cancel</button>'+
+    '</div>'+
+  '</div>';
+  document.body.appendChild(modal);
+  document.getElementById('settleCancelBtn').onclick=function(){document.body.removeChild(modal);};
+  document.getElementById('settleConfirmBtn').onclick=async function(){
+    var accId=document.getElementById('settleAccSel').value;
+    if(!accId){showToast('Select an account','error');return;}
+    document.body.removeChild(modal);
+    // Adjust balance
+    if(isBorrowed){
+      await applyBalanceDB(accId,-loan.amount); // repaying — money goes OUT
+    }else{
+      await applyBalanceDB(accId,loan.amount); // received back — money comes IN
+    }
+    var{error}=await sb.from('mh_loans').update({settled:true}).eq('id',loanId);
+    if(error){showToast('Error: '+error.message,'error');return;}
+    state.loans=state.loans.map(function(l){return l.id===loanId?Object.assign({},l,{settled:true}):l;});
+    showToast('Settled! ☁️');
+    renderLoans();
+    renderHome();
+  };
 }
 async function deleteLoan(loanId){
   var loan=state.loans.find(function(l){return l.id===loanId;});if(!loan)return;
