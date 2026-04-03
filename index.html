@@ -1000,7 +1000,13 @@ function getPendingEmiLiability(){var ym=getYM();var total=0;(state.reminders||[
 
 function buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthName,year,lastEntryStr,loanTotal){
   loanTotal=loanTotal||0;
-  var nw=banks+cards+cash-emiLiability+loanTotal;
+  // loanTotal = lent - borrowed
+  // Bank already reflects loans, so we subtract loanTotal to cancel:
+  // borrowed increases bank (bad for NW), lent decreases bank (good for NW)
+  // NW = banks + cards + cash - emiLiability - loanTotal
+  // because loanTotal = lent - borrowed, so -loanTotal = borrowed - lent
+  // borrowed reduces NW, lent increases NW ✅
+  var nw=banks+cards+cash-emiLiability-loanTotal;
   var nwColor=nw<0?'#FFCDD2':'#fff';
   return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="dash-month">'+monthName+' '+year+'</div><div style="font-size:9px;color:rgba(255,255,255,0.7);font-weight:700">'+lastEntryStr+'</div></div>'+
     '<div class="monthly-row">'+
@@ -1034,7 +1040,7 @@ function renderHome(){
   var lastEntryStr='';
   if(lastTxn&&lastTxn.date){var lp=lastTxn.date.split('-');lastEntryStr='Last entry: '+parseInt(lp[2])+' '+monthNames[parseInt(lp[1])-1];}
   else{lastEntryStr='No entries yet';}
-  document.getElementById('homeNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear(),lastEntryStr,0);
+  document.getElementById('homeNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear(),lastEntryStr,loanTotal);
   var due=dueReminders(),banner=document.getElementById('dueBanner');
   document.body.classList.remove('premium','family');
   if(isFamily())document.body.classList.add('family');
