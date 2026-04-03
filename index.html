@@ -789,18 +789,21 @@ async function loadOrCreateProfile(name){
 async function loadAllData(){
   showToast('Loading your data...','info');
   var uid=state.user.id;
-  var[accs,txns,rems,emis,loans]=await Promise.all([
+  var[accs,txns,rems,emis]=await Promise.all([
     sb.from('mh_accounts').select('*').eq('user_id',uid),
     sb.from('mh_transactions').select('*').eq('user_id',uid).order('date',{ascending:false}),
     sb.from('mh_reminders').select('*').eq('user_id',uid),
-    sb.from('mh_emis').select('*').eq('user_id',uid),
-    sb.from('mh_loans').select('*').eq('user_id',uid)
+    sb.from('mh_emis').select('*').eq('user_id',uid)
   ]);
   state.accounts=accs.data||[];
   state.transactions=txns.data||[];
   state.reminders=rems.data||[];
   state.emis=emis.data||[];
-  state.loans=loans.data||[];
+  // Load loans separately so any error doesn't break main data
+  try{
+    var{data:loansData}=await sb.from('mh_loans').select('*').eq('user_id',uid);
+    state.loans=loansData||[];
+  }catch(e){state.loans=[];}
   var{data:pays}=await sb.from('mh_payments').select('*').eq('user_id',uid);
   state.emiPayments={};state.reminderPayments={};
   (pays||[]).forEach(function(p){
@@ -814,7 +817,7 @@ async function loadAllData(){
 }
 async function doLogout(){
   await sb.auth.signOut();
-  state={user:null,profile:null,accounts:[],transactions:[],reminders:[],emis:[],emiPayments:{},reminderPayments:{},subCategories:JSON.parse(JSON.stringify(DEF_SUBCATS)),investment:0,cashOnHand:0};
+  state={user:null,profile:null,accounts:[],transactions:[],reminders:[],emis:[],loans:[],emiPayments:{},reminderPayments:{},subCategories:JSON.parse(JSON.stringify(DEF_SUBCATS)),investment:0,cashOnHand:0};
   go('s-login',true);showToast('Logged out');
 }
 
@@ -999,6 +1002,7 @@ function buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,mont
       '<div class="stat-box"><div class="stat-lbl">💵 Cash</div><div class="stat-val">'+fmt(cash)+'</div></div>'+
       '<div class="stat-box"><div class="stat-lbl">📈 Invest</div><div class="stat-val green">'+fmt(investment)+'</div></div>'+
     '</div>'+
+    (loanTotal!==0?'<div style="margin-top:6px;background:rgba(255,255,255,0.1);border-radius:10px;padding:8px 14px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:800">🤝 Loans Net</div><div style="font-size:15px;font-weight:900;color:'+(loanTotal>=0?'#CCFF90':'#FFCDD2')+'">'+(loanTotal>=0?'+':'')+fmt(loanTotal)+'</div></div>':'')+
     (emiLiability>0?'<div style="margin-top:8px;background:rgba(211,47,47,0.25);border-radius:10px;padding:9px 14px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;color:#FFCDD2;font-weight:800">⚠️ EMI Pending</div><div style="font-size:17px;font-weight:900;color:#FFCDD2">-'+fmt(emiLiability)+'</div></div>':'');
 }
 function renderHome(){
@@ -1018,7 +1022,7 @@ function renderHome(){
   var lastEntryStr='';
   if(lastTxn&&lastTxn.date){var lp=lastTxn.date.split('-');lastEntryStr='Last entry: '+parseInt(lp[2])+' '+monthNames[parseInt(lp[1])-1];}
   else{lastEntryStr='No entries yet';}
-  document.getElementById('homeNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear(),lastEntryStr,loanTotal);
+  document.getElementById('homeNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear(),lastEntryStr,0);
   var due=dueReminders(),banner=document.getElementById('dueBanner');
   document.body.classList.remove('premium','family');
   if(isFamily())document.body.classList.add('family');
@@ -1342,17 +1346,16 @@ async function saveLoan(){
   if(!person){showToast('Enter person name','error');return;}
   if(!amt||amt<=0){showToast('Enter valid amount','error');return;}
   if(!accId){showToast('Select linked account','error');return;}
-  // Adjust account balance
+  showToast('Saving...','info');
+  // Adjust bank/cash balance
   if(loanType==='borrowed'){
-    // I borrowed — money comes IN to account
-    await applyBalanceDB(accId,amt);
+    await applyBalanceDB(accId,amt); // money comes IN
   }else{
-    // I lent — money goes OUT of account
-    await applyBalanceDB(accId,-amt);
+    await applyBalanceDB(accId,-amt); // money goes OUT
   }
   var loan={id:'l'+Date.now(),user_id:u.id,person:person,amount:amt,type:loanType,linked_account_id:accId,date:date,note:note,settled:false};
   var{error}=await sb.from('mh_loans').insert(loan);
-  if(error){showToast('Error saving: '+error.message,'error');return;}
+  if(error){showToast('Error: '+error.message,'error');return;}
   state.loans.unshift(loan);
   showToast('Loan saved! ☁️');
   toggleAddLoan();
@@ -1361,16 +1364,9 @@ async function saveLoan(){
 }
 async function settleLoan(loanId){
   var loan=state.loans.find(function(l){return l.id===loanId;});if(!loan)return;
-  if(!confirm('Mark "'+loan.person+'" as settled? This will reverse the account balance.'))return;
-  // Reverse the balance effect
-  if(loan.type==='borrowed'){
-    // Repaying — money goes OUT
-    await applyBalanceDB(loan.linked_account_id,-loan.amount);
-  }else{
-    // Received back — money comes IN
-    await applyBalanceDB(loan.linked_account_id,loan.amount);
-  }
-  await sb.from('mh_loans').update({settled:true}).eq('id',loanId);
+  if(!confirm('Mark "'+loan.person+'" as settled?'))return;
+  var{error}=await sb.from('mh_loans').update({settled:true}).eq('id',loanId);
+  if(error){showToast('Error: '+error.message,'error');return;}
   state.loans=state.loans.map(function(l){return l.id===loanId?Object.assign({},l,{settled:true}):l;});
   showToast('Settled! ☁️');
   renderLoans();
@@ -1379,7 +1375,8 @@ async function settleLoan(loanId){
 async function deleteLoan(loanId){
   var loan=state.loans.find(function(l){return l.id===loanId;});if(!loan)return;
   if(!confirm('Delete this loan entry?'))return;
-  await sb.from('mh_loans').delete().eq('id',loanId);
+  var{error}=await sb.from('mh_loans').delete().eq('id',loanId);
+  if(error){showToast('Error: '+error.message,'error');return;}
   state.loans=state.loans.filter(function(l){return l.id!==loanId;});
   showToast('Deleted');
   renderLoans();
