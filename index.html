@@ -813,9 +813,9 @@ async function loadAllData(){
   state.emis=emis.data||[];
   // Load loans separately so any error doesn't break main data
   try{
-    var{data:loansData}=await sb.from('mh_loans').select('*').eq('user_id',uid);
-    state.loans=loansData||[];
-  }catch(e){state.loans=[];}
+    var loansRes=await sb.from('mh_loans').select('*').eq('user_id',uid);
+    state.loans=loansRes.data||[];
+  }catch(e){state.loans=[];console.log('Loans load error:',e);}
   var{data:pays}=await sb.from('mh_payments').select('*').eq('user_id',uid);
   state.emiPayments={};state.reminderPayments={};
   (pays||[]).forEach(function(p){
@@ -868,7 +868,7 @@ async function saveEditBal(){
   var val=parseFloat(document.getElementById('editBalInput').value);if(isNaN(val)){showToast('Invalid amount','error');return;}
   var uid=state.user.id;
   if(editBalCtx.type==='bank'||editBalCtx.type==='card'){
-    await sb.from('mh_accounts').update({balance:val}).eq('id',editBalCtx.id);
+    await sb.from('mh_accounts').update({balance:val}).eq('id',editBalCtx.id).eq('user_id',uid);
     state.accounts=state.accounts.map(function(a){return a.id===editBalCtx.id?Object.assign({},a,{balance:val}):a;});
   }else if(editBalCtx.type==='cash'){
     var cashId='cash-'+uid;
@@ -899,7 +899,11 @@ async function applyBalanceDB(accId,delta){
     await sb.from('mh_accounts').upsert({id:accId,user_id:uid,type:'investment',name:'Investment Fund',balance:state.investment});
   }else{
     var acc=state.accounts.find(function(a){return a.id===accId;});
-    if(acc){var newBal=acc.balance+delta;await sb.from('mh_accounts').update({balance:newBal}).eq('id',accId);state.accounts=state.accounts.map(function(a){return a.id===accId?Object.assign({},a,{balance:newBal}):a;});}
+    if(acc){
+      var newBal=acc.balance+delta;
+      var{error}=await sb.from('mh_accounts').update({balance:newBal}).eq('id',accId).eq('user_id',uid);
+      if(!error)state.accounts=state.accounts.map(function(a){return a.id===accId?Object.assign({},a,{balance:newBal}):a;});
+    }
   }
 }
 function openTxn(accountId,accountLabel,balance,isInvestment){
