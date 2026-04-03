@@ -1006,7 +1006,7 @@ function buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,mont
   // NW = banks + cards + cash - emiLiability - loanTotal
   // because loanTotal = lent - borrowed, so -loanTotal = borrowed - lent
   // borrowed reduces NW, lent increases NW ✅
-  var nw=banks+cards+cash-emiLiability-loanTotal;
+  var nw=banks+cards+cash-emiLiability+loanTotal;
   var nwColor=nw<0?'#FFCDD2':'#fff';
   return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="dash-month">'+monthName+' '+year+'</div><div style="font-size:9px;color:rgba(255,255,255,0.7);font-weight:700">'+lastEntryStr+'</div></div>'+
     '<div class="monthly-row">'+
