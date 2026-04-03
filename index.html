@@ -194,11 +194,12 @@ textarea.inp{resize:none;height:72px;}
 
 <div class="modal" id="settleLoanModal">
   <div class="modal-box">
-    <div style="font-size:15px;font-weight:800;color:#7B3000;margin-bottom:6px" id="settleLoanTitle">Settle Loan</div>
+    <div style="font-size:15px;font-weight:800;color:#7B3000;margin-bottom:4px" id="settleLoanTitle">Settle Loan</div>
     <div style="font-size:12px;color:#90A4AE;margin-bottom:12px" id="settleLoanHint"></div>
-    <div class="fg"><label class="lbl">Select Account *</label><select class="inp" id="settleLoanAcc"><option value="">-- Select --</option></select></div>
+    <div class="fg"><label class="lbl">Amount (Rs.) *</label><input class="inp" type="number" id="settleLoanAmt" placeholder="Enter full or partial amount"/></div>
+    <div class="fg"><label class="lbl" id="settleLoanAccLabel">Select Account *</label><select class="inp" id="settleLoanAcc"><option value="">-- Select --</option></select></div>
     <div class="row" style="margin-top:8px">
-      <button class="btn-primary" style="flex:1" onclick="confirmSettleLoan()">Confirm Settled</button>
+      <button class="btn-primary" style="flex:1" onclick="confirmSettleLoan()">Confirm</button>
       <button class="btn-sec" onclick="closeModal('settleLoanModal')" style="margin-left:8px">Cancel</button>
     </div>
   </div>
@@ -1367,18 +1368,14 @@ async function saveLoan(){
   if(!amt||amt<=0){showToast('Enter valid amount','error');return;}
   if(!accId){showToast('Select linked account','error');return;}
   showToast('Saving...','info');
-  // Adjust bank/cash balance
-  if(loanType==='borrowed'){
-    await applyBalanceDB(accId,amt); // money comes IN
-  }else{
-    await applyBalanceDB(accId,-amt); // money goes OUT
-  }
-  var loan={id:'l'+Date.now(),user_id:u.id,person:person,amount:amt,type:loanType,linked_account_id:accId,date:date,note:note,settled:false};
+  if(loanType==='borrowed'){await applyBalanceDB(accId,amt);}
+  else{await applyBalanceDB(accId,-amt);}
+  var loan={id:'l'+Date.now(),user_id:u.id,person:person,amount:amt,remaining:amt,type:loanType,linked_account_id:accId,date:date,note:note,settled:false};
   var{error}=await sb.from('mh_loans').insert(loan);
   if(error){showToast('Error: '+error.message,'error');return;}
   state.loans.unshift(loan);
   showToast('Loan saved! ☁️');
-  toggleAddLoan();
+  document.getElementById('addLoanForm').style.display='none';
   renderLoans();
   renderHome();
 }
@@ -1387,8 +1384,11 @@ function settleLoan(loanId){
   var loan=state.loans.find(function(l){return l.id===loanId;});if(!loan)return;
   pendingSettleLoanId=loanId;
   var isBorrowed=loan.type==='borrowed';
-  document.getElementById('settleLoanTitle').textContent='Settle — '+loan.person+' (Rs.'+loan.amount.toLocaleString('en-IN')+')';
-  document.getElementById('settleLoanHint').textContent=isBorrowed?'Select account to repay FROM:':'Select account to receive INTO:';
+  var remaining=loan.remaining!=null?loan.remaining:loan.amount;
+  document.getElementById('settleLoanTitle').textContent='Settle — '+loan.person;
+  document.getElementById('settleLoanHint').textContent='Outstanding: Rs.'+remaining.toLocaleString('en-IN')+' | Enter full or partial amount';
+  document.getElementById('settleLoanAmt').value=remaining;
+  document.getElementById('settleLoanAccLabel').textContent=isBorrowed?'Repay FROM Account *':'Receive INTO Account *';
   var sel=document.getElementById('settleLoanAcc');
   sel.innerHTML='<option value="">-- Select --</option>'+
     getAccounts().filter(function(a){return a.type==='bank'||a.type==='cash';}).map(function(a){return '<option value="'+a.id+'">'+a.label+' ('+fmt(a.balance)+')</option>';}).join('');
@@ -1396,26 +1396,29 @@ function settleLoan(loanId){
 }
 async function confirmSettleLoan(){
   var accId=document.getElementById('settleLoanAcc').value;
+  var settleAmt=parseFloat(document.getElementById('settleLoanAmt').value);
   if(!accId){showToast('Select an account','error');return;}
+  if(!settleAmt||settleAmt<=0){showToast('Enter valid amount','error');return;}
   var loanId=pendingSettleLoanId;
   var loan=state.loans.find(function(l){return l.id===loanId;});if(!loan)return;
+  var remaining=loan.remaining!=null?loan.remaining:loan.amount;
+  if(settleAmt>remaining){showToast('Cannot exceed outstanding Rs.'+remaining.toLocaleString('en-IN'),'error');return;}
   closeModal('settleLoanModal');
-  if(loan.type==='borrowed'){
-    await applyBalanceDB(accId,-loan.amount);
-  }else{
-    await applyBalanceDB(accId,loan.amount);
-  }
-  var{error}=await sb.from('mh_loans').update({settled:true}).eq('id',loanId).eq('user_id',state.user.id);
+  if(loan.type==='borrowed'){await applyBalanceDB(accId,-settleAmt);}
+  else{await applyBalanceDB(accId,settleAmt);}
+  var newRemaining=Math.round((remaining-settleAmt)*100)/100;
+  var isFullySettled=newRemaining<=0;
+  var{error}=await sb.from('mh_loans').update({settled:isFullySettled,remaining:newRemaining}).eq('id',loanId).eq('user_id',state.user.id);
   if(error){showToast('Error: '+error.message,'error');return;}
-  state.loans=state.loans.map(function(l){return l.id===loanId?Object.assign({},l,{settled:true}):l;});
-  showToast('Settled! ☁️');
+  state.loans=state.loans.map(function(l){return l.id===loanId?Object.assign({},l,{settled:isFullySettled,remaining:newRemaining}):l;});
+  showToast(isFullySettled?'Fully settled! ☁️':'Partial payment saved! ☁️');
   renderLoans();
   renderHome();
 }
 async function deleteLoan(loanId){
-  var loan=state.loans.find(function(l){return l.id===loanId;});if(!loan)return;
   if(!confirm('Delete this loan entry?'))return;
-  var{error}=await sb.from('mh_loans').delete().eq('id',loanId).eq('user_id',state.user.id);
+  var u=state.user;if(!u)return;
+  var{error}=await sb.from('mh_loans').delete().eq('id',loanId).eq('user_id',u.id);
   if(error){showToast('Error: '+error.message,'error');return;}
   state.loans=state.loans.filter(function(l){return l.id!==loanId;});
   showToast('Deleted');
@@ -1423,47 +1426,61 @@ async function deleteLoan(loanId){
   renderHome();
 }
 function renderLoans(){
-  var active=state.loans.filter(function(l){return !l.settled;});
-  var settled=state.loans.filter(function(l){return l.settled;});
+  var loans=state.loans||[];
+  var active=loans.filter(function(l){return !l.settled;});
+  var settled=loans.filter(function(l){return l.settled;});
   var html='';
-  if(active.length===0&&settled.length===0){
-    html='<div class="empty"><div class="ico">🤝</div><div class="etitle">No loans yet</div><div class="esub">Tap + Add above</div></div>';
+  var totalBorrowed=active.filter(function(l){return l.type==='borrowed';}).reduce(function(s,l){return s+(l.remaining!=null?l.remaining:l.amount);},0);
+  var totalLent=active.filter(function(l){return l.type==='lent';}).reduce(function(s,l){return s+(l.remaining!=null?l.remaining:l.amount);},0);
+  if(active.length>0){
+    html+='<div style="display:flex;gap:8px;margin:8px 12px">'+
+      '<div style="flex:1;background:#FFEBEE;border-radius:12px;padding:12px;text-align:center">'+
+        '<div style="font-size:10px;font-weight:800;color:#D32F2F;text-transform:uppercase">I Owe</div>'+
+        '<div style="font-size:18px;font-weight:900;color:#D32F2F">'+fmt(totalBorrowed)+'</div>'+
+      '</div>'+
+      '<div style="flex:1;background:#E8F5E9;border-radius:12px;padding:12px;text-align:center">'+
+        '<div style="font-size:10px;font-weight:800;color:#2E7D32;text-transform:uppercase">Owed to Me</div>'+
+        '<div style="font-size:18px;font-weight:900;color:#2E7D32">'+fmt(totalLent)+'</div>'+
+      '</div>'+
+    '</div>';
   }
+  if(loans.length===0){html='<div class="empty"><div class="ico">🤝</div><div class="etitle">No loans yet</div><div class="esub">Tap + Add above</div></div>';}
   if(active.length>0){
     html+='<div class="sec-hdr">Active</div>';
     active.forEach(function(l){
       var isBorrowed=l.type==='borrowed';
-      var accs=getAccounts();
-      var acc=accs.find(function(a){return a.id===l.linked_account_id;});
+      var acc=getAccounts().find(function(a){return a.id===l.linked_account_id;});
+      var remaining=l.remaining!=null?l.remaining:l.amount;
       html+='<div class="card" style="margin-top:0;border-left:3px solid '+(isBorrowed?'#D32F2F':'#2E7D32')+'">'+
-        '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
+        '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'+
           '<div>'+
             '<div style="font-size:14px;font-weight:800;color:#7B3000">'+l.person+'</div>'+
-            '<div style="font-size:11px;font-weight:700;color:'+(isBorrowed?'#D32F2F':'#2E7D32')+'">'+(isBorrowed?'I borrowed':'I lent')+'</div>'+
+            '<div style="font-size:11px;font-weight:700;color:'+(isBorrowed?'#D32F2F':'#2E7D32')+'">'+(isBorrowed?'⬇️ I borrowed':'⬆️ I lent')+'</div>'+
             (acc?'<div style="font-size:10px;color:#90A4AE">via '+acc.label+'</div>':'')+
             (l.note?'<div style="font-size:10px;color:#90A4AE;font-style:italic">'+l.note+'</div>':'')+
           '</div>'+
           '<div style="text-align:right">'+
-            '<div style="font-size:15px;font-weight:900;color:'+(isBorrowed?'#D32F2F':'#2E7D32')+'">'+(isBorrowed?'-':'+')+'Rs.'+l.amount.toLocaleString('en-IN')+'</div>'+
+            '<div style="font-size:16px;font-weight:900;color:'+(isBorrowed?'#D32F2F':'#2E7D32')+'">'+(isBorrowed?'-':'+')+'Rs.'+remaining.toLocaleString('en-IN')+'</div>'+
+            (remaining!==l.amount?'<div style="font-size:10px;color:#90A4AE">of Rs.'+l.amount.toLocaleString('en-IN')+'</div>':'')+
             '<div style="font-size:10px;color:#90A4AE">'+l.date+'</div>'+
           '</div>'+
         '</div>'+
         '<div style="display:flex;gap:7px">'+
-          '<button onclick="settleLoan(\''+l.id+'\')" style="flex:1;background:#E8F5E9;border:1px solid #A5D6A7;border-radius:9px;padding:7px;color:#2E7D32;font-size:12px;font-weight:800;cursor:pointer">✅ Mark Settled</button>'+
-          '<button onclick="deleteLoan(\''+l.id+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:7px 11px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">Del</button>'+
+          '<button onclick="settleLoan(\''+l.id+'\')" style="flex:1;background:#FFF3E0;border:1px solid #FFCC80;border-radius:9px;padding:8px;color:#E65100;font-size:12px;font-weight:800;cursor:pointer">Repay / Receive</button>'+
+          '<button onclick="deleteLoan(\''+l.id+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:8px 11px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">Del</button>'+
         '</div>'+
       '</div>';
     });
   }
   if(settled.length>0){
-    html+='<div class="sec-hdr">Settled</div>';
+    html+='<div class="sec-hdr">Settled ✅</div>';
     settled.forEach(function(l){
       var isBorrowed=l.type==='borrowed';
       html+='<div class="card" style="margin-top:0;opacity:0.6">'+
         '<div style="display:flex;justify-content:space-between">'+
           '<div>'+
             '<div style="font-size:14px;font-weight:800;color:#7B3000">'+l.person+'</div>'+
-            '<div style="font-size:11px;font-weight:700;color:#90A4AE">'+(isBorrowed?'Borrowed &amp; repaid':'Lent &amp; received back')+'</div>'+
+            '<div style="font-size:11px;color:#2E7D32;font-weight:700">✅ '+(isBorrowed?'Repaid':'Received back')+'</div>'+
             (l.note?'<div style="font-size:10px;color:#90A4AE;font-style:italic">'+l.note+'</div>':'')+
           '</div>'+
           '<div style="text-align:right">'+
@@ -1477,6 +1494,7 @@ function renderLoans(){
   }
   document.getElementById('loansList').innerHTML=html;
 }
+
 
 // ── FAMILY MANAGEMENT ──
 async function renderFamily(){
