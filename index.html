@@ -1343,20 +1343,18 @@ function setLoanType(type){
 }
 function toggleAddLoan(){
   var f=document.getElementById('addLoanForm');
-  var showing=f.style.display!=='none';
-  f.style.display=showing?'none':'block';
-  if(!showing){
-    document.getElementById('loanPerson').value='';
-    document.getElementById('loanAmount').value='';
-    document.getElementById('loanNote').value='';
-    document.getElementById('loanDate').value=todayStr();
-    loanType='borrowed';
-    setLoanType('borrowed');
-    // Populate account dropdown
-    var sel=document.getElementById('loanAccount');
-    sel.innerHTML='<option value="">-- Select Account --</option>'+
-      getAccounts().filter(function(a){return a.type==='bank'||a.type==='cash';}).map(function(a){return '<option value="'+a.id+'">'+a.label+'</option>';}).join('');
-  }
+  var showing=f.style.display==='block';
+  if(showing){f.style.display='none';return;}
+  f.style.display='block';
+  document.getElementById('loanPerson').value='';
+  document.getElementById('loanAmount').value='';
+  document.getElementById('loanNote').value='';
+  document.getElementById('loanDate').value=todayStr();
+  loanType='borrowed';
+  setLoanType('borrowed');
+  var sel=document.getElementById('loanAccount');
+  sel.innerHTML='<option value="">-- Select Account --</option>'+
+    getAccounts().filter(function(a){return a.type==='bank'||a.type==='cash';}).map(function(a){return '<option value="'+a.id+'">'+a.label+'</option>';}).join('');
 }
 async function saveLoan(){
   var u=state.user;if(!u)return;
@@ -1407,7 +1405,7 @@ async function confirmSettleLoan(){
   }else{
     await applyBalanceDB(accId,loan.amount);
   }
-  var{error}=await sb.from('mh_loans').update({settled:true}).eq('id',loanId);
+  var{error}=await sb.from('mh_loans').update({settled:true}).eq('id',loanId).eq('user_id',state.user.id);
   if(error){showToast('Error: '+error.message,'error');return;}
   state.loans=state.loans.map(function(l){return l.id===loanId?Object.assign({},l,{settled:true}):l;});
   showToast('Settled! ☁️');
@@ -1417,7 +1415,7 @@ async function confirmSettleLoan(){
 async function deleteLoan(loanId){
   var loan=state.loans.find(function(l){return l.id===loanId;});if(!loan)return;
   if(!confirm('Delete this loan entry?'))return;
-  var{error}=await sb.from('mh_loans').delete().eq('id',loanId);
+  var{error}=await sb.from('mh_loans').delete().eq('id',loanId).eq('user_id',state.user.id);
   if(error){showToast('Error: '+error.message,'error');return;}
   state.loans=state.loans.filter(function(l){return l.id!==loanId;});
   showToast('Deleted');
