@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <title>Mera Hisaab Mere Saath v3.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>
 .premium-banner{margin:8px 12px;background:linear-gradient(135deg,#0D47A1,#1565C0);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}
@@ -497,6 +497,29 @@ textarea.inp{resize:none;height:72px;}
   <div id="emiList"></div>
 </div>
 
+<!-- LOANS -->
+<div class="screen" id="s-loans">
+  <div class="hdr-sm"><button class="back-btn" onclick="goBack()">&#8592;</button><div class="title">🤝 Loans &amp; Lendings</div><button class="hdr-btn" onclick="toggleAddLoan()">+ Add</button></div>
+  <div id="addLoanForm" style="display:none">
+    <div class="card">
+      <div class="card-title">New Loan Entry</div>
+      <div class="fg">
+        <div class="tog-row">
+          <button class="tog on-red on" id="tog-loan-borrow" onclick="setLoanType('borrowed')">I Borrowed</button>
+          <button class="tog" id="tog-loan-lent" onclick="setLoanType('lent')">I Lent</button>
+        </div>
+      </div>
+      <div class="fg"><label class="lbl">Person / Party Name *</label><input class="inp" id="loanPerson" placeholder="e.g. Ramesh, Uncle"/></div>
+      <div class="fg"><label class="lbl">Amount (Rs.) *</label><input class="inp" type="number" id="loanAmount" placeholder="0"/></div>
+      <div class="fg"><label class="lbl">Linked Account *</label><select class="inp" id="loanAccount"><option value="">-- Select Account --</option></select></div>
+      <div class="fg"><label class="lbl">Date</label><input class="inp" type="date" id="loanDate"/></div>
+      <div class="fg"><label class="lbl">Note (optional)</label><input class="inp" id="loanNote" placeholder="e.g. Wedding expense, Emergency"/></div>
+      <div class="row"><button class="btn-primary" style="flex:1" onclick="saveLoan()">Save</button><button class="btn-sec" onclick="toggleAddLoan()" style="margin-left:8px">Cancel</button></div>
+    </div>
+  </div>
+  <div id="loansList"></div>
+</div>
+
 <!-- REPORTS -->
 <div class="screen" id="s-reports">
   <div class="hdr-sm"><button class="back-btn" onclick="goBack()">&#8592;</button><div class="title">Reports</div></div>
@@ -668,14 +691,14 @@ function isFamily(){return getPlan()==='family';}
 function isFamilyHead(){return isFamily()&&(state.profile.is_family_head===true||state.profile.is_family_head==='true');}
 function isFamilyMember(){return isFamily()&&!isFamilyHead();}
 const SUPA_URL='https://jqqnnkzozjskziaizajg.supabase.co';
-const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpxcW5ua3pvempza3ppYWl6YWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5Mjk1ODAsImV4cCI6MjA4ODUwNTU4MH0.sEYeWnm0dvuw8bLSVnQhqmgV8LB-pELjpuVIa3Us1Gg';
+const SUPA_KEY='sb_publishable_XDHJ55QPN6R9Hw8ikMerNQ_QNFX_z0P';
 const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 
 // ── APP STATE ──
 var DEF_SUBCATS={Personal:['Food & Dining','Transport & Fuel','Shopping & Clothes','Bills & Utilities','EMI & Loans','Health & Medical','Entertainment','Salary & Income','Other'],Business:['Office Supplies','Travel & Stay','Client Entertainment','Software & Tools','Salary Paid','Business Income','Other'],Family:['Groceries','School Fees','Family Outing','Home Maintenance','Medical','Other']};
 var INVEST_SUBCATS=['FD (Fixed Deposit)','Mutual Fund','SIP','Equity / Stocks','Post Office','Recurring Deposit','Other'];
 var MAIN_CATS=['Personal','Business','Family'];
-var state={user:null,profile:null,accounts:[],transactions:[],reminders:[],emis:[],emiPayments:{},reminderPayments:{},subCategories:JSON.parse(JSON.stringify(DEF_SUBCATS)),investment:0,cashOnHand:0};
+var state={user:null,profile:null,accounts:[],transactions:[],reminders:[],emis:[],loans:[],emiPayments:{},reminderPayments:{},subCategories:JSON.parse(JSON.stringify(DEF_SUBCATS)),investment:0,cashOnHand:0};
 var navStack=[],currentScreen='splash';
 var txnCtx={accountId:'',accountLabel:'',balance:0,isInvestment:false};
 var txnIsTransfer=false,txnIsExpense=true,txnIsDeposit=true,txnMainCat='Personal',txnSubCat='',txnOtherText='';
@@ -704,7 +727,7 @@ function go(id,resetStack){
   else if(id==='s-reports')initReports();
   else if(id==='s-settings')renderSettings();
   else if(id==='s-newTxn')renderTxnForm();
-  else if(id==='s-family')renderFamily();
+  else if(id==='s-loans')renderLoans();
 }
 function goBack(){var prev=navStack.length>0?navStack.pop():(state.user?'s-home':'s-login');showScreen(prev);if(prev==='s-home')renderHome();else if(prev==='s-accounts')renderAccounts();else if(prev==='s-reminders')renderReminders();else if(prev==='s-emi')renderEmi();else if(prev==='s-reports')renderReports();else if(prev==='s-settings')renderSettings();}
 
@@ -766,16 +789,18 @@ async function loadOrCreateProfile(name){
 async function loadAllData(){
   showToast('Loading your data...','info');
   var uid=state.user.id;
-  var[accs,txns,rems,emis]=await Promise.all([
+  var[accs,txns,rems,emis,loans]=await Promise.all([
     sb.from('mh_accounts').select('*').eq('user_id',uid),
     sb.from('mh_transactions').select('*').eq('user_id',uid).order('date',{ascending:false}),
     sb.from('mh_reminders').select('*').eq('user_id',uid),
-    sb.from('mh_emis').select('*').eq('user_id',uid)
+    sb.from('mh_emis').select('*').eq('user_id',uid),
+    sb.from('mh_loans').select('*').eq('user_id',uid)
   ]);
   state.accounts=accs.data||[];
   state.transactions=txns.data||[];
   state.reminders=rems.data||[];
   state.emis=emis.data||[];
+  state.loans=loans.data||[];
   var{data:pays}=await sb.from('mh_payments').select('*').eq('user_id',uid);
   state.emiPayments={};state.reminderPayments={};
   (pays||[]).forEach(function(p){
@@ -958,8 +983,9 @@ function dueReminders(){
 function getYM(){var today=new Date();return today.getFullYear()+'-'+(today.getMonth()+1<10?'0':'')+(today.getMonth()+1);}
 function getPendingEmiLiability(){var ym=getYM();var total=0;(state.reminders||[]).forEach(function(r){if(!r.active)return;if(!state.reminderPayments[r.id+'-'+ym])total+=r.amount;});return total;}
 
-function buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthName,year,lastEntryStr){
-  var nw=banks+cards+cash-emiLiability;
+function buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthName,year,lastEntryStr,loanTotal){
+  loanTotal=loanTotal||0;
+  var nw=banks+cards+cash-emiLiability+loanTotal;
   var nwColor=nw<0?'#FFCDD2':'#fff';
   return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="dash-month">'+monthName+' '+year+'</div><div style="font-size:9px;color:rgba(255,255,255,0.7);font-weight:700">'+lastEntryStr+'</div></div>'+
     '<div class="monthly-row">'+
@@ -981,6 +1007,7 @@ function renderHome(){
   var banks=state.accounts.filter(function(a){return a.type==='bank';}).reduce(function(s,a){return s+a.balance;},0);
   var cards=state.accounts.filter(function(a){return a.type==='card';}).reduce(function(s,a){return s+a.balance;},0);
   var cash=state.cashOnHand,investment=state.investment;
+  var loanTotal=(state.loans||[]).filter(function(l){return !l.settled;}).reduce(function(s,l){return s+(l.type==='lent'?l.amount:-l.amount);},0);
   var emiLiability=getPendingEmiLiability();
   var now=new Date();
   var ym=now.getFullYear()+'-'+(now.getMonth()+1<10?'0':'')+(now.getMonth()+1);
@@ -991,7 +1018,7 @@ function renderHome(){
   var lastEntryStr='';
   if(lastTxn&&lastTxn.date){var lp=lastTxn.date.split('-');lastEntryStr='Last entry: '+parseInt(lp[2])+' '+monthNames[parseInt(lp[1])-1];}
   else{lastEntryStr='No entries yet';}
-  document.getElementById('homeNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear(),lastEntryStr);
+  document.getElementById('homeNW').innerHTML=buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,monthlyInvestment,monthNames[now.getMonth()],now.getFullYear(),lastEntryStr,loanTotal);
   var due=dueReminders(),banner=document.getElementById('dueBanner');
   document.body.classList.remove('premium','family');
   if(isFamily())document.body.classList.add('family');
@@ -1019,6 +1046,7 @@ function renderHome(){
     '<div class="mi" onclick="go(\'s-accounts\')"><div class="mi-icon" style="background:#FFF3E0">🏦</div><div style="flex:1"><div class="mi-title">Accounts</div><div class="mi-sub">'+state.accounts.filter(function(a){return a.type==='bank'||a.type==='card';}).length+' accounts</div></div><div class="mi-arrow">&rsaquo;</div></div>'+
     '<div class="mi" onclick="go(\'s-reports\')"><div class="mi-icon" style="background:#F3E5F5">📈</div><div style="flex:1"><div class="mi-title">Reports</div><div class="mi-sub">Expenses &amp; income</div></div><div class="mi-arrow">&rsaquo;</div></div>'+
     '<div class="mi" onclick="go(\'s-reminders\')"><div class="mi-icon" style="background:#FFF8E1">🔔</div><div style="flex:1"><div class="mi-title">EMI &amp; Reminders</div><div class="mi-sub">'+remSubText+'</div></div>'+(dueCount>0?'<div class="mi-badge">'+dueCount+' Due</div>':'<div class="mi-arrow">&rsaquo;</div>')+'</div>'+
+    '<div class="mi" onclick="go(\'s-loans\')"><div class="mi-icon" style="background:#FFF3E0">🤝</div><div style="flex:1"><div class="mi-title">Loans &amp; Lendings</div><div class="mi-sub">'+(state.loans||[]).filter(function(l){return !l.settled;}).length+' active</div></div><div class="mi-arrow">&rsaquo;</div></div>'+
     (isFamilyHead()?'<div class="mi" onclick="go(\'s-family\')"><div class="mi-icon" style="background:#E8F5E9">👨‍👩‍👧</div><div style="flex:1"><div class="mi-title">Manage Family</div><div class="mi-sub">Add &amp; view members</div></div><div class="mi-arrow">&rsaquo;</div></div>':'')+
     '<a href="mailto:vkvcoder.support@gmail.com" style="text-decoration:none;display:block;margin:0 12px 8px">'+
       '<div class="mi" style="margin:0;background:linear-gradient(135deg,#E3F2FD,#BBDEFB)">'+
@@ -1279,6 +1307,139 @@ async function saveName(){var n=document.getElementById('settingName').value.tri
 function addSubCat(){var n=document.getElementById('newSubCatName').value.trim();if(!n){showToast('Enter name','error');return;}var cats=state.subCategories[settingCat]||[];var wo=cats.filter(function(c){return c!=='Other';});state.subCategories[settingCat]=wo.concat([n,'Other']);showToast('Added!');document.getElementById('newSubCatName').value='';renderSubCatList();}
 function removeSubCat(cat,name){state.subCategories[cat]=(state.subCategories[cat]||[]).filter(function(c){return c!==name;});showToast('Removed');renderSubCatList();}
 function renderSubCatList(){document.getElementById('subCatList').innerHTML=MAIN_CATS.map(function(cat){return '<div class="card"><div class="card-title">'+cat+'</div><div class="chips">'+(state.subCategories[cat]||[]).map(function(s){return '<div style="display:flex;align-items:center;gap:4px;background:'+(s==='Other'?'#FFF3E0':'#FFCCBC')+';border-radius:100px;padding:5px 12px;border:1px solid #BBDEFB"><span style="font-size:12px;font-weight:700;color:#E65100">'+s+'</span>'+(s!=='Other'?'<button onclick="removeSubCat(\''+cat+'\',\''+s+'\')" style="background:none;border:none;color:#D32F2F;font-size:15px;cursor:pointer;padding:0 0 0 3px;line-height:1">x</button>':'')+'</div>';}).join('')+'</div></div>';}).join('');}
+
+// ── LOANS ──
+var loanType='borrowed';
+function setLoanType(type){
+  loanType=type;
+  document.getElementById('tog-loan-borrow').className='tog'+(type==='borrowed'?' on-red on':'');
+  document.getElementById('tog-loan-lent').className='tog'+(type==='lent'?' on-green on':'');
+}
+function toggleAddLoan(){
+  var f=document.getElementById('addLoanForm');
+  var showing=f.style.display!=='none';
+  f.style.display=showing?'none':'block';
+  if(!showing){
+    document.getElementById('loanPerson').value='';
+    document.getElementById('loanAmount').value='';
+    document.getElementById('loanNote').value='';
+    document.getElementById('loanDate').value=todayStr();
+    loanType='borrowed';
+    setLoanType('borrowed');
+    // Populate account dropdown
+    var sel=document.getElementById('loanAccount');
+    sel.innerHTML='<option value="">-- Select Account --</option>'+
+      getAccounts().filter(function(a){return a.type==='bank'||a.type==='cash';}).map(function(a){return '<option value="'+a.id+'">'+a.label+'</option>';}).join('');
+  }
+}
+async function saveLoan(){
+  var u=state.user;if(!u)return;
+  var person=document.getElementById('loanPerson').value.trim();
+  var amt=parseFloat(document.getElementById('loanAmount').value);
+  var accId=document.getElementById('loanAccount').value;
+  var date=document.getElementById('loanDate').value;
+  var note=document.getElementById('loanNote').value.trim();
+  if(!person){showToast('Enter person name','error');return;}
+  if(!amt||amt<=0){showToast('Enter valid amount','error');return;}
+  if(!accId){showToast('Select linked account','error');return;}
+  // Adjust account balance
+  if(loanType==='borrowed'){
+    // I borrowed — money comes IN to account
+    await applyBalanceDB(accId,amt);
+  }else{
+    // I lent — money goes OUT of account
+    await applyBalanceDB(accId,-amt);
+  }
+  var loan={id:'l'+Date.now(),user_id:u.id,person:person,amount:amt,type:loanType,linked_account_id:accId,date:date,note:note,settled:false};
+  var{error}=await sb.from('mh_loans').insert(loan);
+  if(error){showToast('Error saving: '+error.message,'error');return;}
+  state.loans.unshift(loan);
+  showToast('Loan saved! ☁️');
+  toggleAddLoan();
+  renderLoans();
+  renderHome();
+}
+async function settleLoan(loanId){
+  var loan=state.loans.find(function(l){return l.id===loanId;});if(!loan)return;
+  if(!confirm('Mark "'+loan.person+'" as settled? This will reverse the account balance.'))return;
+  // Reverse the balance effect
+  if(loan.type==='borrowed'){
+    // Repaying — money goes OUT
+    await applyBalanceDB(loan.linked_account_id,-loan.amount);
+  }else{
+    // Received back — money comes IN
+    await applyBalanceDB(loan.linked_account_id,loan.amount);
+  }
+  await sb.from('mh_loans').update({settled:true}).eq('id',loanId);
+  state.loans=state.loans.map(function(l){return l.id===loanId?Object.assign({},l,{settled:true}):l;});
+  showToast('Settled! ☁️');
+  renderLoans();
+  renderHome();
+}
+async function deleteLoan(loanId){
+  var loan=state.loans.find(function(l){return l.id===loanId;});if(!loan)return;
+  if(!confirm('Delete this loan entry?'))return;
+  await sb.from('mh_loans').delete().eq('id',loanId);
+  state.loans=state.loans.filter(function(l){return l.id!==loanId;});
+  showToast('Deleted');
+  renderLoans();
+  renderHome();
+}
+function renderLoans(){
+  var active=state.loans.filter(function(l){return !l.settled;});
+  var settled=state.loans.filter(function(l){return l.settled;});
+  var html='';
+  if(active.length===0&&settled.length===0){
+    html='<div class="empty"><div class="ico">🤝</div><div class="etitle">No loans yet</div><div class="esub">Tap + Add above</div></div>';
+  }
+  if(active.length>0){
+    html+='<div class="sec-hdr">Active</div>';
+    active.forEach(function(l){
+      var isBorrowed=l.type==='borrowed';
+      var accs=getAccounts();
+      var acc=accs.find(function(a){return a.id===l.linked_account_id;});
+      html+='<div class="card" style="margin-top:0;border-left:3px solid '+(isBorrowed?'#D32F2F':'#2E7D32')+'">'+
+        '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
+          '<div>'+
+            '<div style="font-size:14px;font-weight:800;color:#7B3000">'+l.person+'</div>'+
+            '<div style="font-size:11px;font-weight:700;color:'+(isBorrowed?'#D32F2F':'#2E7D32')+'">'+(isBorrowed?'I borrowed':'I lent')+'</div>'+
+            (acc?'<div style="font-size:10px;color:#90A4AE">via '+acc.label+'</div>':'')+
+            (l.note?'<div style="font-size:10px;color:#90A4AE;font-style:italic">'+l.note+'</div>':'')+
+          '</div>'+
+          '<div style="text-align:right">'+
+            '<div style="font-size:15px;font-weight:900;color:'+(isBorrowed?'#D32F2F':'#2E7D32')+'">'+(isBorrowed?'-':'+')+'Rs.'+l.amount.toLocaleString('en-IN')+'</div>'+
+            '<div style="font-size:10px;color:#90A4AE">'+l.date+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:7px">'+
+          '<button onclick="settleLoan(\''+l.id+'\')" style="flex:1;background:#E8F5E9;border:1px solid #A5D6A7;border-radius:9px;padding:7px;color:#2E7D32;font-size:12px;font-weight:800;cursor:pointer">✅ Mark Settled</button>'+
+          '<button onclick="deleteLoan(\''+l.id+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:7px 11px;color:#D32F2F;font-size:11px;font-weight:700;cursor:pointer">Del</button>'+
+        '</div>'+
+      '</div>';
+    });
+  }
+  if(settled.length>0){
+    html+='<div class="sec-hdr">Settled</div>';
+    settled.forEach(function(l){
+      var isBorrowed=l.type==='borrowed';
+      html+='<div class="card" style="margin-top:0;opacity:0.6">'+
+        '<div style="display:flex;justify-content:space-between">'+
+          '<div>'+
+            '<div style="font-size:14px;font-weight:800;color:#7B3000">'+l.person+'</div>'+
+            '<div style="font-size:11px;font-weight:700;color:#90A4AE">'+(isBorrowed?'Borrowed &amp; repaid':'Lent &amp; received back')+'</div>'+
+            (l.note?'<div style="font-size:10px;color:#90A4AE;font-style:italic">'+l.note+'</div>':'')+
+          '</div>'+
+          '<div style="text-align:right">'+
+            '<div style="font-size:13px;font-weight:800;color:#90A4AE">Rs.'+l.amount.toLocaleString('en-IN')+'</div>'+
+            '<div style="font-size:10px;color:#90A4AE">'+l.date+'</div>'+
+            '<button onclick="deleteLoan(\''+l.id+'\')" style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:9px;padding:3px 8px;color:#D32F2F;font-size:10px;font-weight:700;cursor:pointer;margin-top:4px">Del</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    });
+  }
+  document.getElementById('loansList').innerHTML=html;
+}
 
 // ── FAMILY MANAGEMENT ──
 async function renderFamily(){
