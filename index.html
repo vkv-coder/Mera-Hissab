@@ -1027,7 +1027,7 @@ function buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,mont
   // NW = banks + cards + cash - emiLiability - loanTotal
   // because loanTotal = lent - borrowed, so -loanTotal = borrowed - lent
   // borrowed reduces NW, lent increases NW ✅
-  var nw=banks+cards+cash-emiLiability+loanTotal;
+  var nw=banks+cards+cash+investment-emiLiability+loanTotal;
   var nwColor=nw<0?'#FFCDD2':'#fff';
   return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="dash-month">'+monthName+' '+year+'</div><div style="font-size:9px;color:rgba(255,255,255,0.7);font-weight:700">'+lastEntryStr+'</div></div>'+
     '<div class="monthly-row">'+
@@ -1036,9 +1036,9 @@ function buildNWBar(banks,cards,cash,investment,emiLiability,monthlyExpense,mont
     '</div>'+
     '<div class="nw-center"><div class="nw-lbl-c">Net Worth (Liquid)</div><div class="nw-val-c" style="color:'+nwColor+'">'+(nw<0?'-':'')+fmt(nw)+'</div></div>'+
     '<div class="stats-row">'+
-      '<div class="stat-box"><div class="stat-lbl">🏦 Banks</div><div class="stat-val">'+fmt(banks)+'</div></div>'+
+      '<div class="stat-box'+(banks<0?' danger':'')+'"><div class="stat-lbl">🏦 Banks</div><div class="stat-val'+(banks<0?' red':'')+'">'+(banks<0?'-':'')+fmt(banks)+'</div></div>'+
       '<div class="stat-box'+(cards<0?' danger':'')+'"><div class="stat-lbl">💳 CC Debt</div><div class="stat-val'+(cards<0?' red':'')+'">'+(cards<0?'-':'')+fmt(Math.abs(cards))+'</div></div>'+
-      '<div class="stat-box"><div class="stat-lbl">💵 Cash</div><div class="stat-val">'+fmt(cash)+'</div></div>'+
+      '<div class="stat-box'+(state.cashOnHand<0?' danger':'')+'"><div class="stat-lbl">💵 Cash</div><div class="stat-val'+(cash<0?' red':'')+'">'+(cash<0?'-':'')+fmt(cash)+'</div></div>'+
       '<div class="stat-box"><div class="stat-lbl">📈 Invest</div><div class="stat-val green">'+fmt(investment)+'</div></div>'+
     '</div>'+
     (loanTotal!==0?'<div style="margin-top:6px;background:rgba(255,255,255,0.1);border-radius:10px;padding:8px 14px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:800">🤝 Loans Net</div><div style="font-size:15px;font-weight:900;color:'+(loanTotal>=0?'#CCFF90':'#FFCDD2')+'">'+(loanTotal>=0?'+':'')+fmt(loanTotal)+'</div></div>':'')+
