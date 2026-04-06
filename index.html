@@ -471,7 +471,7 @@ textarea.inp{resize:none;height:72px;}
       </div>
     </div>
     <div id="txnNoteSection" class="fg"><label class="lbl">Note (optional)</label><input class="inp" id="txnNote" placeholder="Add a note..."/></div>
-    <div class="row"><button class="btn-primary" style="flex:1" onclick="saveTxn()">Save</button><button class="btn-sec" onclick="goBack()" style="margin-left:8px">Cancel</button></div>
+    <div class="row"><button id="txnSaveBtn" class="btn-primary" style="flex:1" onclick="saveTxn()">Save</button><button class="btn-sec" onclick="goBack()" style="margin-left:8px">Cancel</button></div>
   </div>
 </div>
 
@@ -907,8 +907,9 @@ async function applyBalanceDB(accId,delta){
     if(acc){
       var newBal=acc.balance+delta;
       var{error}=await sb.from('mh_accounts').update({balance:newBal}).eq('id',accId).eq('user_id',uid);
-      if(!error)state.accounts=state.accounts.map(function(a){return a.id===accId?Object.assign({},a,{balance:newBal}):a;});
-    }
+      if(error){console.error('applyBalanceDB error:',error.message,'accId:',accId,'delta:',delta,'newBal:',newBal);}
+      else{state.accounts=state.accounts.map(function(a){return a.id===accId?Object.assign({},a,{balance:newBal}):a;});}
+    }else{console.error('applyBalanceDB: account not found in state for id:',accId);}
   }
 }
 function openTxn(accountId,accountLabel,balance,isInvestment){
@@ -960,21 +961,25 @@ function cancelOther(){txnSubCat='';txnOtherText='';document.getElementById('sub
 function renderToAccountOptions(){var others=getAccounts().filter(function(a){return a.id!==txnCtx.accountId;});document.getElementById('toAccountSelect').innerHTML='<option value="">-- Select destination --</option>'+others.map(function(a){return '<option value="'+a.id+'">'+a.label+'</option>';}).join('');}
 async function saveTxn(){
   var u=state.user;if(!u)return;
-  // Disable save button to prevent double submission
-  var saveBtn=document.querySelector('#s-newTxn .btn-primary');
+  var saveBtn=document.getElementById('txnSaveBtn');
+  if(saveBtn&&saveBtn.disabled)return;
   if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Saving...';}
-  var amt=parseFloat(document.getElementById('txnAmount').value);if(!amt||amt<=0){showToast('Enter a valid amount','error');if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Save';}return;}
+  var amt=parseFloat(document.getElementById('txnAmount').value);
+  if(!amt||amt<=0){showToast('Enter a valid amount','error');if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Save';}return;}
   var date=document.getElementById('txnDate').value;
   var isInv=txnCtx.isInvestment;
   var uid=u.id;
   var txn;
   if(txnIsTransfer){
-    var toId=document.getElementById('toAccountSelect').value;var note=document.getElementById('txnTransferNote').value.trim();
+    var toId=document.getElementById('toAccountSelect').value;
+    var note=document.getElementById('txnTransferNote').value.trim();
     if(!toId){showToast('Select destination account','error');if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Save';}return;}
     if(!note){showToast('Note is mandatory','error');if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Save';}return;}
     var acc=getAccounts().find(function(a){return a.id===toId;});
-    await applyBalanceDB(txnCtx.accountId,-amt);await applyBalanceDB(toId,amt);
-    var txAmt=amt,txSub='Transfer';if(acc&&acc.type==='card'){txAmt=-Math.abs(amt);txSub='Credit Card Payment';}
+    await applyBalanceDB(txnCtx.accountId,-amt);
+    await applyBalanceDB(toId,amt);
+    var txAmt=amt,txSub='Transfer';
+    if(acc&&acc.type==='card'){txAmt=-Math.abs(amt);txSub='Credit Card Payment';}
     txn={id:Date.now(),user_id:uid,date:date,from_account_id:txnCtx.accountId,to_account_id:toId,amount:txAmt,is_transfer:true,is_investment:false,main_cat:'Transfer',sub_cat:txSub,note:note};
   }else if(isInv){
     if(!txnSubCat){showToast('Select investment type','error');if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Save';}return;}
@@ -987,17 +992,18 @@ async function saveTxn(){
     txn={id:Date.now(),user_id:uid,date:date,from_account_id:linkedAccId,to_account_id:'investment-'+uid,amount:invAmt,is_transfer:false,is_investment:true,main_cat:'Investment',sub_cat:txnSubCat,invest_type:txnIsDeposit?'deposit':'withdrawal',note:note3};
   }else{
     if(!txnSubCat){showToast('Select sub-category','error');if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Save';}return;}
-    var finalSub=txnSubCat==='Other'?txnOtherText:txnSubCat,finalAmt=txnIsExpense?-amt:amt;
+    var finalSub=txnSubCat==='Other'?txnOtherText:txnSubCat;
+    var finalAmt=txnIsExpense?-amt:amt;
     await applyBalanceDB(txnCtx.accountId,finalAmt);
     var note2=document.getElementById('txnNote').value.trim();
     txn={id:Date.now(),user_id:uid,date:date,from_account_id:txnCtx.accountId,amount:finalAmt,is_transfer:false,is_investment:false,main_cat:txnMainCat,sub_cat:finalSub,note:note2};
   }
   var{error}=await sb.from('mh_transactions').insert(txn);
-  if(error){showToast('Error saving: '+error.message,'error');if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Save';}return;}
+  if(error){showToast('Error: '+error.message,'error');if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Save';}return;}
   state.transactions.unshift(txn);
+  if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Save';}
   showToast('Saved to cloud! ☁️');
   goBack();
-  renderAccounts();
 }
 
 // ── HOME ──
