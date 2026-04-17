@@ -500,11 +500,20 @@
     margin-left: 4px;
   }
 
+  .mobile-meta { display: none; }
+
   @media (max-width: 640px) {
     .cards-row { grid-template-columns: repeat(2, 1fr); }
+    .card-value { font-size: 22px; }
+    th:nth-child(2), td:nth-child(2),
+    th:nth-child(3), td:nth-child(3),
     th:nth-child(4), td:nth-child(4),
     th:nth-child(5), td:nth-child(5) { display: none; }
     .search-box { width: 100%; margin-left: 0; }
+    .filter-btn { padding: 5px 10px; font-size: 12px; }
+    .mobile-meta { display: block; font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .action-btns { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    td { padding: 12px; }
   }
 </style>
 </head>
@@ -829,6 +838,7 @@ function renderTable() {
       <td>
         <div class="user-name">${u.name || '—'}${u.is_family_head ? '<span class="family-tag">HEAD</span>' : ''}</div>
         <div class="user-email">${u.email || u.phone || '—'}</div>
+        <div class="mobile-meta">${planLabel(u)} · ${fmtDate(u.created_at)}</div>
       </td>
       <td>${planLabel(u)}</td>
       <td>${trialInfo(u)}<div class="trial-chip">${fmtDate(u.created_at)}</div></td>
