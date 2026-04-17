@@ -617,7 +617,7 @@
 // ═══════════════════════════════════
 //  CONFIG — change PIN and keys here
 // ═══════════════════════════════════
-const ADMIN_PIN = '2010'; // ← CHANGE THIS to your secret PIN
+const ADMIN_PIN = '1234'; // ← CHANGE THIS to your secret PIN
 const SUPA_URL  = 'https://jqqnnkzozjskziaizajg.supabase.co';
 const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpxcW5ua3pvempza3ppYWl6YWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5Mjk1ODAsImV4cCI6MjA4ODUwNTU4MH0.sEYeWnm0dvuw8bLSVnQhqmgV8LB-pELjpuVIa3Us1Gg';
 
@@ -674,15 +674,19 @@ function doLogout() {
 //  SUPABASE FETCH
 // ═══════════════════════════════════
 async function sbGet(table, query = '') {
-  const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${query}`, {
+  const url = `${SUPA_URL}/rest/v1/${table}?${query}`;
+  const res = await fetch(url, {
     headers: {
       'apikey': SUPA_ANON,
       'Authorization': `Bearer ${SUPA_ANON}`,
-      'Accept-Profile': 'public'
+      'Content-Type': 'application/json'
     }
   });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  const text = await res.text();
+  if (!res.ok) throw new Error(text);
+  const data = JSON.parse(text);
+  console.log(`sbGet ${table}:`, data);
+  return data;
 }
 
 // For writes — calls Edge Function if configured, else shows error
