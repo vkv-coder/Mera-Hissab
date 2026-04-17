@@ -679,7 +679,9 @@ async function sbGet(table, query = '') {
     headers: {
       'apikey': SUPA_ANON,
       'Authorization': `Bearer ${SUPA_ANON}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Accept-Profile': 'public',
+      'Content-Profile': 'public'
     }
   });
   const text = await res.text();
@@ -732,7 +734,6 @@ function renderSummary() {
 
   allUsers.forEach(u => {
     const plan = u.plan || 'free';
-    if (!u.is_active) return;
     if (plan === 'free') {
       if (u.trial_started_at) {
         const trialEnd = new Date(new Date(u.trial_started_at).getTime() + 7*24*60*60*1000);
@@ -763,7 +764,6 @@ function renderSummary() {
 function planLabel(u) {
   const plan = u.plan || 'free';
   const now = new Date();
-  if (!u.is_active) return '<span class="badge badge-inactive">Inactive</span>';
   if (plan === 'free') {
     if (u.trial_started_at) {
       const trialEnd = new Date(new Date(u.trial_started_at).getTime() + 7*24*60*60*1000);
@@ -809,7 +809,7 @@ function renderTable() {
     if (q && !name.includes(q) && !email.includes(q)) return false;
 
     if (currentFilter === 'all') return true;
-    if (currentFilter === 'inactive') return !u.is_active;
+    if (currentFilter === 'inactive') return false;
     if (currentFilter === 'trial') {
       if (plan !== 'free' || !u.trial_started_at) return false;
       const trialEnd = new Date(new Date(u.trial_started_at).getTime() + 7*24*60*60*1000);
@@ -838,9 +838,6 @@ function renderTable() {
         <div class="action-btns">
           <button class="act-btn success" onclick="openUpgrade('${u.id}', '${u.name||u.email}', '${u.plan||'free'}')">Upgrade</button>
           <button class="act-btn" onclick="openExtend('${u.id}', '${u.name||u.email}')">+Trial</button>
-          ${u.is_active
-            ? `<button class="act-btn danger" onclick="openDeactivate('${u.id}', '${u.name||u.email}')">Deactivate</button>`
-            : `<button class="act-btn success" onclick="doActivate('${u.id}', '${u.name||u.email}')">Activate</button>`}
         </div>
       </td>
     </tr>
