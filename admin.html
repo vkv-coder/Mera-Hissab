@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mera Hisaab — Admin</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --teal: #00b8a9;
+    --teal-dark: #008f83;
+    --teal-dim: rgba(0,184,169,0.12);
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1f2937;
+    --border: rgba(255,255,255,0.07);
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --red: #f85149;
+    --amber: #d29922;
+    --green: #3fb950;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── LOGIN SCREEN ── */
+  #loginScreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,184,169,0.15) 0%, transparent 60%), var(--bg);
+  }
+
+  .login-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+
+  .login-logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--teal);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .login-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .login-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  .pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .pin-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    transition: all 0.2s;
+  }
+
+  .pin-dot.filled {
+    background: var(--teal);
+    border-color: var(--teal);
+  }
+
+  .numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 240px;
+    margin: 0 auto 16px;
+  }
+
+  .num-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    height: 54px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .num-btn:hover { background: var(--bg3); border-color: var(--teal); color: var(--teal); }
+  .num-btn:active { transform: scale(0.95); }
+  .num-btn.del { font-size: 14px; color: var(--muted); }
+  .num-btn.enter { background: var(--teal); border-color: var(--teal); color: #000; font-weight: 700; font-size: 13px; letter-spacing: 1px; }
+  .num-btn.enter:hover { background: var(--teal-dark); }
+
+  .login-error {
+    color: var(--red);
+    font-size: 13px;
+    min-height: 18px;
+  }
+
+  /* ── MAIN APP ── */
+  #app { display: none; }
+
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .app-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--teal);
+    background: var(--teal-dim);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .header-title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .logout-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 20px;
+  }
+
+  /* ── SUMMARY CARDS ── */
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+
+  .card-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .card-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .card-value.teal { color: var(--teal); }
+  .card-value.green { color: var(--green); }
+  .card-value.amber { color: var(--amber); }
+  .card-value.red { color: var(--red); }
+  .card-value.blue { color: var(--blue); }
+  .card-value.purple { color: var(--purple); }
+
+  .card-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── ALERT BANNER ── */
+  .alert-banner {
+    background: rgba(210,153,34,0.1);
+    border: 1px solid rgba(210,153,34,0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--amber);
+    display: none;
+  }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+
+  .filter-btn {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover { border-color: var(--teal); color: var(--teal); }
+  .filter-btn.active { background: var(--teal-dim); border-color: var(--teal); color: var(--teal); }
+
+  .search-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    width: 200px;
+    transition: border-color 0.2s;
+    margin-left: auto;
+  }
+
+  .search-box:focus { border-color: var(--teal); }
+  .search-box::placeholder { color: var(--muted); }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead tr {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .user-name { font-weight: 500; font-size: 14px; }
+  .user-email { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .badge-free { background: rgba(125,133,144,0.15); color: var(--muted); }
+  .badge-trial { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .badge-paid { background: rgba(63,185,80,0.15); color: var(--green); }
+  .badge-premium { background: rgba(0,184,169,0.15); color: var(--teal); }
+  .badge-family { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .badge-inactive { background: rgba(248,81,73,0.15); color: var(--red); }
+
+  .trial-chip {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .trial-chip.expiring { color: var(--amber); }
+  .trial-chip.expired { color: var(--red); }
+
+  .action-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .act-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .act-btn:hover { border-color: var(--teal); color: var(--teal); }
+  .act-btn.danger:hover { border-color: var(--red); color: var(--red); }
+  .act-btn.success:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .modal-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .modal-field {
+    margin-bottom: 14px;
+  }
+
+  .modal-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .modal-select, .modal-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+  }
+
+  .modal-select:focus, .modal-input:focus { border-color: var(--teal); }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: flex-end;
+  }
+
+  .btn {
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-ghost { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); }
+  .btn-primary { background: var(--teal); color: #000; font-weight: 600; }
+  .btn-primary:hover { background: var(--teal-dark); }
+  .btn-danger { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+  .btn-danger:hover { background: rgba(248,81,73,0.25); }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; }
+
+  .loading {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 13px;
+    z-index: 300;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+
+  .family-tag {
+    font-size: 10px;
+    background: rgba(188,140,255,0.1);
+    color: var(--purple);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+  }
+
+  @media (max-width: 640px) {
+    .cards-row { grid-template-columns: repeat(2, 1fr); }
+    th:nth-child(4), td:nth-child(4),
+    th:nth-child(5), td:nth-child(5) { display: none; }
+    .search-box { width: 100%; margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">MERA HISAAB</div>
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">Enter your 4-digit admin PIN</div>
+    <div class="pin-dots" id="pinDots">
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+    </div>
+    <div class="numpad">
+      <button class="num-btn" onclick="addPin('1')">1</button>
+      <button class="num-btn" onclick="addPin('2')">2</button>
+      <button class="num-btn" onclick="addPin('3')">3</button>
+      <button class="num-btn" onclick="addPin('4')">4</button>
+      <button class="num-btn" onclick="addPin('5')">5</button>
+      <button class="num-btn" onclick="addPin('6')">6</button>
+      <button class="num-btn" onclick="addPin('7')">7</button>
+      <button class="num-btn" onclick="addPin('8')">8</button>
+      <button class="num-btn" onclick="addPin('9')">9</button>
+      <button class="num-btn del" onclick="delPin()">⌫</button>
+      <button class="num-btn" onclick="addPin('0')">0</button>
+      <button class="num-btn enter" onclick="checkPin()">GO</button>
+    </div>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div id="app">
+  <header>
+    <div class="header-left">
+      <span class="app-badge">ADMIN</span>
+      <span class="header-title">Mera Hisaab</span>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Logout</button>
+  </header>
+
+  <main>
+    <!-- Summary Cards -->
+    <div class="cards-row" id="cards">
+      <div class="card"><div class="card-label">Total Users</div><div class="card-value teal" id="cTotal">—</div></div>
+      <div class="card"><div class="card-label">Free</div><div class="card-value" id="cFree">—</div></div>
+      <div class="card"><div class="card-label">On Trial</div><div class="card-value blue" id="cTrial">—</div></div>
+      <div class="card"><div class="card-label">Paid</div><div class="card-value green" id="cPaid">—</div></div>
+      <div class="card"><div class="card-label">Premium</div><div class="card-value teal" id="cPremium">—</div></div>
+      <div class="card"><div class="card-label">Family</div><div class="card-value purple" id="cFamily">—</div></div>
+    </div>
+
+    <!-- Alert for expiring trials -->
+    <div class="alert-banner" id="alertBanner"></div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+      <button class="filter-btn" onclick="setFilter('free', this)">Free</button>
+      <button class="filter-btn" onclick="setFilter('trial', this)">Trial</button>
+      <button class="filter-btn" onclick="setFilter('free_paid', this)">Paid</button>
+      <button class="filter-btn" onclick="setFilter('premium', this)">Premium</button>
+      <button class="filter-btn" onclick="setFilter('family', this)">Family</button>
+      <button class="filter-btn" onclick="setFilter('inactive', this)">Inactive</button>
+      <input class="search-box" type="text" placeholder="Search name / email..." oninput="doSearch(this.value)" id="searchBox">
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Plan</th>
+            <th>Trial / Expiry</th>
+            <th>Family</th>
+            <th>Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="userTable">
+          <tr><td colspan="6"><div class="loading">Loading users…</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-sub" id="modalSub"></div>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modalConfirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════
+//  CONFIG — change PIN and keys here
+// ═══════════════════════════════════
+const ADMIN_PIN = '1234'; // ← CHANGE THIS to your secret PIN
+const SUPA_URL  = 'https://jqqnnkzozjskziaizajg.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpxcW5ua3pvempza3ppYWl6YWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5Mjk1ODAsImV4cCI6MjA4ODUwNTU4MH0.sEYeWnm0dvuw8bLSVnQhqmgV8LB-pELjpuVIa3Us1Gg';
+
+// For writes — set up Supabase Edge Function URL here
+// Leave empty to disable write actions (view-only mode)
+const EDGE_FN_URL = ''; // e.g. 'https://jqqnnkzozjskziaizajg.supabase.co/functions/v1/admin-action'
+const EDGE_FN_SECRET = ''; // a secret token your edge function checks
+
+// ═══════════════════════════════════
+//  PIN LOGIN
+// ═══════════════════════════════════
+let pinEntry = '';
+
+function addPin(d) {
+  if (pinEntry.length >= 4) return;
+  pinEntry += d;
+  updateDots();
+  if (pinEntry.length === 4) setTimeout(checkPin, 150);
+}
+
+function delPin() {
+  pinEntry = pinEntry.slice(0, -1);
+  updateDots();
+  document.getElementById('loginError').textContent = '';
+}
+
+function updateDots() {
+  document.querySelectorAll('.pin-dot').forEach((d, i) => {
+    d.classList.toggle('filled', i < pinEntry.length);
+  });
+}
+
+function checkPin() {
+  if (pinEntry === ADMIN_PIN) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadUsers();
+  } else {
+    document.getElementById('loginError').textContent = 'Incorrect PIN. Try again.';
+    pinEntry = '';
+    updateDots();
+  }
+}
+
+function doLogout() {
+  pinEntry = '';
+  updateDots();
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// ═══════════════════════════════════
+//  SUPABASE FETCH
+// ═══════════════════════════════════
+async function sbGet(table, query = '') {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${query}`, {
+    headers: { 'apikey': SUPA_ANON, 'Authorization': `Bearer ${SUPA_ANON}` }
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// For writes — calls Edge Function if configured, else shows error
+async function sbWrite(action, payload) {
+  if (!EDGE_FN_URL) {
+    showToast('Write actions require Edge Function setup', 'error');
+    return false;
+  }
+  const res = await fetch(EDGE_FN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-secret': EDGE_FN_SECRET
+    },
+    body: JSON.stringify({ action, payload })
+  });
+  if (!res.ok) { showToast('Action failed', 'error'); return false; }
+  return true;
+}
+
+// ═══════════════════════════════════
+//  LOAD USERS
+// ═══════════════════════════════════
+let allUsers = [];
+let currentFilter = 'all';
+let searchQuery = '';
+
+async function loadUsers() {
+  try {
+    const users = await sbGet('mh_users', 'select=*&order=created_at.desc');
+    allUsers = users;
+    renderSummary();
+    renderTable();
+  } catch(e) {
+    document.getElementById('userTable').innerHTML =
+      `<tr><td colspan="6"><div class="empty-state"><div class="icon">⚠️</div>Failed to load: ${e.message}</div></td></tr>`;
+  }
+}
+
+function renderSummary() {
+  const now = new Date();
+  let free=0, trial=0, paid=0, premium=0, family=0, expiringSoon=[];
+
+  allUsers.forEach(u => {
+    const plan = u.plan || 'free';
+    if (!u.is_active) return;
+    if (plan === 'free') {
+      if (u.trial_started_at) {
+        const trialEnd = new Date(new Date(u.trial_started_at).getTime() + 7*24*60*60*1000);
+        const daysLeft = Math.ceil((trialEnd - now) / (1000*60*60*24));
+        if (daysLeft > 0) { trial++; if (daysLeft <= 2) expiringSoon.push({u, daysLeft}); }
+        else free++;
+      } else free++;
+    } else if (plan === 'free_paid') paid++;
+    else if (plan === 'premium') premium++;
+    else if (plan === 'family') family++;
+  });
+
+  document.getElementById('cTotal').textContent = allUsers.length;
+  document.getElementById('cFree').textContent = free;
+  document.getElementById('cTrial').textContent = trial;
+  document.getElementById('cPaid').textContent = paid;
+  document.getElementById('cPremium').textContent = premium;
+  document.getElementById('cFamily').textContent = family;
+
+  const banner = document.getElementById('alertBanner');
+  if (expiringSoon.length > 0) {
+    banner.style.display = 'block';
+    banner.textContent = `⚠️ ${expiringSoon.length} trial(s) expiring within 2 days: ` +
+      expiringSoon.map(x => `${x.u.name || x.u.email} (${x.daysLeft}d)`).join(', ');
+  }
+}
+
+function planLabel(u) {
+  const plan = u.plan || 'free';
+  const now = new Date();
+  if (!u.is_active) return '<span class="badge badge-inactive">Inactive</span>';
+  if (plan === 'free') {
+    if (u.trial_started_at) {
+      const trialEnd = new Date(new Date(u.trial_started_at).getTime() + 7*24*60*60*1000);
+      const daysLeft = Math.ceil((trialEnd - now) / (1000*60*60*24));
+      if (daysLeft > 0) return '<span class="badge badge-trial">Trial</span>';
+    }
+    return '<span class="badge badge-free">Free</span>';
+  }
+  if (plan === 'free_paid') return '<span class="badge badge-paid">Paid</span>';
+  if (plan === 'premium') return '<span class="badge badge-premium">Premium</span>';
+  if (plan === 'family') return '<span class="badge badge-family">Family</span>';
+  return `<span class="badge badge-free">${plan}</span>`;
+}
+
+function trialInfo(u) {
+  const now = new Date();
+  const plan = u.plan || 'free';
+  if (plan === 'free' && u.trial_started_at) {
+    const trialEnd = new Date(new Date(u.trial_started_at).getTime() + 7*24*60*60*1000);
+    const daysLeft = Math.ceil((trialEnd - now) / (1000*60*60*24));
+    if (daysLeft > 0) {
+      const cls = daysLeft <= 2 ? 'expiring' : '';
+      return `<div class="trial-chip ${cls}">${daysLeft}d left</div>`;
+    }
+    return `<div class="trial-chip expired">Expired</div>`;
+  }
+  if (u.free_paid_at) return `<div class="trial-chip">${fmtDate(u.free_paid_at)}</div>`;
+  return '';
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'2-digit'});
+}
+
+function renderTable() {
+  const now = new Date();
+  let users = allUsers.filter(u => {
+    const plan = u.plan || 'free';
+    const name = (u.name || '').toLowerCase();
+    const email = (u.email || '').toLowerCase();
+    const q = searchQuery.toLowerCase();
+    if (q && !name.includes(q) && !email.includes(q)) return false;
+
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'inactive') return !u.is_active;
+    if (currentFilter === 'trial') {
+      if (plan !== 'free' || !u.trial_started_at) return false;
+      const trialEnd = new Date(new Date(u.trial_started_at).getTime() + 7*24*60*60*1000);
+      return trialEnd > now;
+    }
+    return plan === currentFilter;
+  });
+
+  if (!users.length) {
+    document.getElementById('userTable').innerHTML =
+      `<tr><td colspan="6"><div class="empty-state"><div class="icon">🔍</div>No users found</div></td></tr>`;
+    return;
+  }
+
+  document.getElementById('userTable').innerHTML = users.map(u => `
+    <tr>
+      <td>
+        <div class="user-name">${u.name || '—'}${u.is_family_head ? '<span class="family-tag">HEAD</span>' : ''}</div>
+        <div class="user-email">${u.email || u.phone || '—'}</div>
+      </td>
+      <td>${planLabel(u)}</td>
+      <td>${trialInfo(u)}<div class="trial-chip">${fmtDate(u.created_at)}</div></td>
+      <td>${u.is_family_head ? '👑 Head' : u.family_head_id ? '👥 Member' : '—'}</td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td>
+        <div class="action-btns">
+          <button class="act-btn success" onclick="openUpgrade('${u.id}', '${u.name||u.email}', '${u.plan||'free'}')">Upgrade</button>
+          <button class="act-btn" onclick="openExtend('${u.id}', '${u.name||u.email}')">+Trial</button>
+          ${u.is_active
+            ? `<button class="act-btn danger" onclick="openDeactivate('${u.id}', '${u.name||u.email}')">Deactivate</button>`
+            : `<button class="act-btn success" onclick="doActivate('${u.id}', '${u.name||u.email}')">Activate</button>`}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function doSearch(v) {
+  searchQuery = v;
+  renderTable();
+}
+
+// ═══════════════════════════════════
+//  MODAL ACTIONS
+// ═══════════════════════════════════
+function openUpgrade(id, name, currentPlan) {
+  document.getElementById('modalTitle').textContent = 'Upgrade / Change Plan';
+  document.getElementById('modalSub').textContent = name;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-field">
+      <label class="modal-label">Select new plan</label>
+      <select class="modal-select" id="newPlan">
+        <option value="free" ${currentPlan==='free'?'selected':''}>Free</option>
+        <option value="free_paid" ${currentPlan==='free_paid'?'selected':''}>Paid</option>
+        <option value="premium" ${currentPlan==='premium'?'selected':''}>Premium</option>
+        <option value="family" ${currentPlan==='family'?'selected':''}>Family</option>
+      </select>
+    </div>`;
+  document.getElementById('modalConfirm').onclick = async () => {
+    const plan = document.getElementById('newPlan').value;
+    const ok = await sbWrite('upgrade', { id, plan });
+    if (ok) { showToast(`Plan updated to ${plan}`, 'success'); closeModal(); loadUsers(); }
+  };
+  openModal();
+}
+
+function openExtend(id, name) {
+  document.getElementById('modalTitle').textContent = 'Extend Trial';
+  document.getElementById('modalSub').textContent = name;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-field">
+      <label class="modal-label">Extend by (days)</label>
+      <input class="modal-input" type="number" id="extDays" value="7" min="1" max="30">
+    </div>`;
+  document.getElementById('modalConfirm').onclick = async () => {
+    const days = parseInt(document.getElementById('extDays').value);
+    const ok = await sbWrite('extend_trial', { id, days });
+    if (ok) { showToast(`Trial extended by ${days} days`, 'success'); closeModal(); loadUsers(); }
+  };
+  openModal();
+}
+
+function openDeactivate(id, name) {
+  document.getElementById('modalTitle').textContent = 'Deactivate User';
+  document.getElementById('modalSub').textContent = `Are you sure you want to deactivate ${name}?`;
+  document.getElementById('modalBody').innerHTML = '';
+  const btn = document.getElementById('modalConfirm');
+  btn.className = 'btn btn-danger';
+  btn.textContent = 'Deactivate';
+  btn.onclick = async () => {
+    const ok = await sbWrite('deactivate', { id });
+    if (ok) { showToast('User deactivated', 'success'); closeModal(); loadUsers(); }
+  };
+  openModal();
+}
+
+async function doActivate(id, name) {
+  const ok = await sbWrite('activate', { id });
+  if (ok) { showToast(`${name} activated`, 'success'); loadUsers(); }
+}
+
+function openModal() { document.getElementById('modalOverlay').classList.add('open'); }
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.getElementById('modalConfirm').className = 'btn btn-primary';
+  document.getElementById('modalConfirm').textContent = 'Confirm';
+}
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+
+// ═══════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
