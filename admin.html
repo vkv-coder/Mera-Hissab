@@ -8,20 +8,20 @@
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
   :root {
-    --teal: #00b8a9;
-    --teal-dark: #008f83;
-    --teal-dim: rgba(0,184,169,0.12);
-    --bg: #0d1117;
-    --bg2: #161b22;
-    --bg3: #1f2937;
-    --border: rgba(255,255,255,0.07);
-    --text: #e6edf3;
-    --muted: #7d8590;
-    --red: #f85149;
-    --amber: #d29922;
-    --green: #3fb950;
-    --blue: #58a6ff;
-    --purple: #bc8cff;
+    --teal: #00897b;
+    --teal-dark: #00695c;
+    --teal-dim: rgba(0,137,123,0.1);
+    --bg: #f0f4f8;
+    --bg2: #ffffff;
+    --bg3: #f5f7fa;
+    --border: rgba(0,0,0,0.08);
+    --text: #1a202c;
+    --muted: #718096;
+    --red: #e53e3e;
+    --amber: #d69e2e;
+    --green: #38a169;
+    --blue: #3182ce;
+    --purple: #805ad5;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -617,7 +617,7 @@
 // ═══════════════════════════════════
 //  CONFIG — change PIN and keys here
 // ═══════════════════════════════════
-const ADMIN_PIN = '1234'; // ← CHANGE THIS to your secret PIN
+const ADMIN_PIN = '2010'; // ← CHANGE THIS to your secret PIN
 const SUPA_URL  = 'https://jqqnnkzozjskziaizajg.supabase.co';
 const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpxcW5ua3pvempza3ppYWl6YWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5Mjk1ODAsImV4cCI6MjA4ODUwNTU4MH0.sEYeWnm0dvuw8bLSVnQhqmgV8LB-pELjpuVIa3Us1Gg';
 
@@ -675,7 +675,11 @@ function doLogout() {
 // ═══════════════════════════════════
 async function sbGet(table, query = '') {
   const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${query}`, {
-    headers: { 'apikey': SUPA_ANON, 'Authorization': `Bearer ${SUPA_ANON}` }
+    headers: {
+      'apikey': SUPA_ANON,
+      'Authorization': `Bearer ${SUPA_ANON}`,
+      'Accept-Profile': 'public'
+    }
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
