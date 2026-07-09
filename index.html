@@ -610,7 +610,7 @@ textarea.inp{resize:none;height:72px;}
       <strong>Last updated: April 2026</strong>
     </div>
   </div>
-  <div style="padding:12px;text-align:center;font-size:11px;color:#90A4AE">VKV Coder · vkv-coder.github.io</div>
+  <div style="padding:12px;text-align:center;font-size:11px;color:#90A4AE">VKV Coder · mera-hissab.anyapps.in</div>
 </div>
 
 <!-- SETTINGS -->
@@ -1625,6 +1625,13 @@ window.onload=async function(){
     }
   });
 };
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw.js');
+  });
+}
 </script>
 </body>
 </html>
