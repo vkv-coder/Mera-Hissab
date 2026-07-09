@@ -181,6 +181,17 @@ textarea.inp{resize:none;height:72px;}
     <div class="row"><button class="btn-primary" style="flex:1" onclick="confirmOther()">Confirm</button><button class="btn-sec" onclick="cancelOther()" style="margin-left:8px">Cancel</button></div>
   </div>
 </div>
+<div class="modal" id="resetPassModal">
+  <div class="modal-box">
+    <div style="font-size:15px;font-weight:800;color:#7B3000;margin-bottom:14px">🔐 Set New Password</div>
+    <div class="fg"><label class="lbl">New Password *</label><input class="inp" type="password" id="newPassInput" placeholder="Min 6 characters"/></div>
+    <div class="fg"><label class="lbl">Confirm Password *</label><input class="inp" type="password" id="newPassConfirm" placeholder="Re-enter password"/></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn-primary" style="flex:1" onclick="confirmNewPassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="payEmiModal">
   <div class="modal-box">
     <div style="font-size:15px;font-weight:800;color:#7B3000;margin-bottom:14px" id="payEmiTitle">Pay EMI</div>
@@ -749,6 +760,18 @@ function showForgotPassword(){
   navStack.push(currentScreen);
   showScreen('s-forgot');
   document.getElementById('resetEmail').value=document.getElementById('loginEmail').value||'';
+}
+async function confirmNewPassword(){
+  var newPass=document.getElementById('newPassInput').value;
+  var confirm=document.getElementById('newPassConfirm').value;
+  if(!newPass||newPass.length<6){showToast('Password must be at least 6 characters','error');return;}
+  if(newPass!==confirm){showToast('Passwords do not match','error');return;}
+  var{error}=await sb.auth.updateUser({password:newPass});
+  if(error){showToast('Error: '+error.message,'error');return;}
+  closeModal('resetPassModal');
+  showToast('Password updated! Please login again.');
+  await sb.auth.signOut();
+  go('s-login',true);
 }
 async function doPasswordReset(){
   var email=document.getElementById('resetEmail').value.trim().toLowerCase();
@@ -1624,12 +1647,9 @@ window.onload=async function(){
   },1800);
   sb.auth.onAuthStateChange(async function(event,session){
     if(event==='PASSWORD_RECOVERY'){
-      var newPass=prompt('Enter your new password (min 6 characters):');
-      if(newPass&&newPass.length>=6){
-        var{error}=await sb.auth.updateUser({password:newPass});
-        if(error){showToast('Error: '+error.message,'error');}
-        else{showToast('Password updated! Please login again.');await sb.auth.signOut();go('s-login',true);}
-      }
+      // Show password reset modal
+      var modal=document.getElementById('resetPassModal');
+      if(modal){openModal('resetPassModal');}
     }else if(event==='SIGNED_IN'&&session){
       state.user=session.user;
       await loadOrCreateProfile('');
