@@ -766,18 +766,31 @@ async function doEmailLogin(){
   if(!email||!password){showToast('Enter email and password','error');return;}
   showToast('Signing in...','info');
   var{data,error}=await sb.auth.signInWithPassword({email,password});
-  if(error&&error.message.includes('Invalid')){
-    if(!name){showToast('Enter your display name for first time signup','error');return;}
-    var{data:d2,error:e2}=await sb.auth.signUp({email,password});
-    if(e2){showToast('Error: '+e2.message,'error');return;}
-    data=d2;
-  }else if(error){showToast('Error: '+error.message,'error');return;}
+  if(error){
+    // If invalid credentials — could be wrong password OR new user
+    if(error.message.includes('Invalid login credentials')||error.message.includes('invalid_credentials')){
+      // Try signup — if user exists, Supabase will return "User already registered"
+      if(!name){showToast('Wrong password, or new user? Enter your name to register','error');return;}
+      var{data:d2,error:e2}=await sb.auth.signUp({email,password,options:{data:{name:name}}});
+      if(e2){
+        if(e2.message.includes('already registered')||e2.message.includes('already been registered')){
+          showToast('Wrong password! Please try again','error');
+        }else{
+          showToast('Error: '+e2.message,'error');
+        }
+        return;
+      }
+      data=d2;
+    }else{
+      showToast('Error: '+error.message,'error');return;
+    }
+  }
   if(data&&data.user){
     state.user=data.user;
     await loadOrCreateProfile(name);
     await loadAllData();
     go('s-home',true);
-    showToast('Welcome, '+state.profile.name+'! ☁️');
+    showToast('Welcome, '+(state.profile?state.profile.name:name)+'! ☁️');
   }
 }
 async function loadOrCreateProfile(name){
