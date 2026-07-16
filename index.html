@@ -231,6 +231,7 @@ textarea.inp{resize:none;height:72px;}
     <div class="fg"><label class="lbl">Password *</label><input class="inp" type="password" id="loginPassword" placeholder="Min 6 characters"/></div>
     <div style="text-align:center;margin-top:-4px;margin-bottom:14px"><span onclick="showForgotPassword()" style="font-size:13px;color:#E65100;font-weight:800;cursor:pointer;text-decoration:underline">🔑 Forgot Password?</span></div>
     <div class="fg"><label class="lbl">Display Name (first time only)</label><input class="inp" type="text" id="loginName" placeholder="e.g. Vijay / vkv"/></div>
+    <div class="fg"><label class="lbl">Mobile Number (first time only)</label><input class="inp" type="tel" id="loginMobile" maxlength="10" placeholder="10-digit mobile number"/></div>
     <button class="btn-primary" onclick="doEmailLogin()" style="margin-bottom:8px">Sign In / Sign Up</button>
     <div style="font-size:11px;color:#90A4AE;text-align:center;font-weight:600">Your data is encrypted and safe on cloud ☁️</div>
   </div>
@@ -289,7 +290,7 @@ textarea.inp{resize:none;height:72px;}
   <div style="background:linear-gradient(135deg,#0D47A1,#1565C0);padding:44px 20px 28px;text-align:center;">
     <div style="font-size:54px">⏰</div>
     <div style="font-size:22px;font-weight:900;color:#fff;margin-top:10px">Free Trial Ended</div>
-    <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:6px">Your 7-day trial is complete!</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:6px">Your 30-day trial is complete!</div>
     <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px">Your data is safe — choose a plan to continue</div>
   </div>
   <div class="card" style="margin-top:12px;border:2px solid #1565C0">
@@ -661,11 +662,11 @@ var FREE_PRICE=2900;
 function getTrialDaysLeft(){
   if(!state.profile||state.profile.plan!=='free')return 999;
   var since=state.profile.trial_started_at||state.profile.created_at;
-  if(!since)return 7;
+  if(!since)return 30;
   var start=new Date(since);
   var now=new Date();
   var daysPassed=Math.floor((now-start)/(1000*60*60*24));
-  return Math.max(0,7-daysPassed);
+  return Math.max(0,30-daysPassed);
 }
 function isTrialExpired(){return getPlan()==='free'&&getTrialDaysLeft()<=0;}
 function isTrialActive(){return getPlan()==='free'&&getTrialDaysLeft()>0;}
@@ -786,6 +787,7 @@ async function doEmailLogin(){
   var email=document.getElementById('loginEmail').value.trim().toLowerCase();
   var password=document.getElementById('loginPassword').value;
   var name=document.getElementById('loginName').value.trim();
+  var mobile=document.getElementById('loginMobile').value.trim();
   if(!email||!password){showToast('Enter email and password','error');return;}
   showToast('Signing in...','info');
   var{data,error}=await sb.auth.signInWithPassword({email,password});
@@ -794,6 +796,7 @@ async function doEmailLogin(){
     if(error.message.includes('Invalid login credentials')||error.message.includes('invalid_credentials')){
       // Try signup — if user exists, Supabase will return "User already registered"
       if(!name){showToast('Wrong password, or new user? Enter your name to register','error');return;}
+      if(!mobile||mobile.length!==10){showToast('Enter a valid 10-digit mobile number','error');return;}
       var{data:d2,error:e2}=await sb.auth.signUp({email,password,options:{data:{name:name}}});
       if(e2){
         if(e2.message.includes('already registered')||e2.message.includes('already been registered')){
@@ -810,13 +813,13 @@ async function doEmailLogin(){
   }
   if(data&&data.user){
     state.user=data.user;
-    await loadOrCreateProfile(name);
+    await loadOrCreateProfile(name,mobile);
     await loadAllData();
     go('s-home',true);
     showToast('Welcome, '+(state.profile?state.profile.name:name)+'! ☁️');
   }
 }
-async function loadOrCreateProfile(name){
+async function loadOrCreateProfile(name,mobile){
   var{data}=await sb.from('mh_users').select('*').eq('id',state.user.id).single();
   if(data){
     if(name&&name.trim()&&name.trim()!==data.name){
@@ -831,7 +834,7 @@ async function loadOrCreateProfile(name){
   }else{
     var n=(name&&name.trim())?name.trim():(state.user.user_metadata&&state.user.user_metadata.full_name)||state.user.email.split('@')[0];
     var now=new Date().toISOString();
-    var{data:d2}=await sb.from('mh_users').insert({id:state.user.id,name:n,email:state.user.email,plan:'free',is_family_head:false,trial_started_at:now}).select().single();
+    var{data:d2}=await sb.from('mh_users').insert({id:state.user.id,name:n,email:state.user.email,mobile:mobile||null,plan:'free',is_family_head:false,trial_started_at:now}).select().single();
     state.profile=d2||{id:state.user.id,name:n,email:state.user.email,plan:'free',is_family_head:false,trial_started_at:now};
   }
 }
