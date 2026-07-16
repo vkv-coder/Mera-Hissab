@@ -718,6 +718,11 @@ function isFamilyMember(){return isFamily()&&!isFamilyHead();}
 const SUPA_URL='https://jqqnnkzozjskziaizajg.supabase.co';
 const SUPA_KEY='sb_publishable_XDHJ55QPN6R9Hw8ikMerNQ_QNFX_z0P';
 const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
+const TG_BOT='8755990830:AAF4SBuKaGc4FXfjGqNdqVTOFCwk3vj8LYg';
+const TG_CHAT='8507770594';
+async function tg(msg){
+  try{await fetch(`https://api.telegram.org/bot${TG_BOT}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:TG_CHAT,text:msg,parse_mode:'HTML'})});}catch(e){}
+}
 
 // ── APP STATE ──
 var DEF_SUBCATS={Personal:['Food & Dining','Transport & Fuel','Shopping & Clothes','Bills & Utilities','EMI & Loans','Health & Medical','Entertainment','Salary & Income','Other'],Business:['Office Supplies','Travel & Stay','Client Entertainment','Software & Tools','Salary Paid','Business Income','Other'],Family:['Groceries','School Fees','Family Outing','Home Maintenance','Medical','Other']};
@@ -836,6 +841,7 @@ async function loadOrCreateProfile(name,mobile){
     var now=new Date().toISOString();
     var{data:d2}=await sb.from('mh_users').insert({id:state.user.id,name:n,email:state.user.email,mobile:mobile||null,plan:'free',is_family_head:false,trial_started_at:now}).select().single();
     state.profile=d2||{id:state.user.id,name:n,email:state.user.email,plan:'free',is_family_head:false,trial_started_at:now};
+    tg('🆕 <b>New Mera Hissab Signup</b>\n\nName: '+n+'\nEmail: '+state.user.email+'\nMobile: '+(mobile||'—'));
   }
 }
 async function loadAllData(){
